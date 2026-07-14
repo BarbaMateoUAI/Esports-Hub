@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-hltv-bg text-hltv-textLight font-sans antialiased m-0 p-0;
+}
