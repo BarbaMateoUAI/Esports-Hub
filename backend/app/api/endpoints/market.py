@@ -45,7 +45,7 @@ async def get_market_players(
     response_list = []
     for pro in pros:
         contract_result = await db.execute(
-            select(Contract).options(selectinload(Contract.team))
+            select(Contract).options(selectinload(Contract.team).selectinload(Team.owner))
             .where(Contract.pro_id == pro.id, Contract.status == ContractState.ACTIVE)
         )
         active_contract = contract_result.scalars().first()
@@ -177,6 +177,18 @@ async def update_transfer_offer(
         raise HTTPException(status_code=403, detail="Not your offer to accept/reject")
         
     offer.status = status
+    
+    if status == TransferOfferState.ACCEPTED:
+        new_contract = Contract(
+            team_id=offer.from_team_id,
+            pro_id=offer.pro_id,
+            salary=float(offer.amount) * 0.10,
+            duration_months=6,
+            buyout_clause=float(offer.amount) * 2,
+            status=ContractState.PENDING
+        )
+        db.add(new_contract)
+        
     await db.commit()
     return {"message": f"Transfer offer {status.value}"}
 
