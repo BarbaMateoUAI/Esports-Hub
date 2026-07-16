@@ -176,18 +176,9 @@ async def update_transfer_offer(
     if offer.to_team_id != team.id:
         raise HTTPException(status_code=403, detail="Not your offer to accept/reject")
         
-    offer.status = status
-    
-    if status == TransferOfferState.ACCEPTED:
-        new_contract = Contract(
-            team_id=offer.from_team_id,
-            pro_id=offer.pro_id,
-            salary=float(offer.amount) * 0.10,
-            duration_months=6,
-            buyout_clause=float(offer.amount) * 2,
-            status=ContractState.PENDING
-        )
-        db.add(new_contract)
+    from app.services.states.context import TransferOfferContext
+    context = TransferOfferContext(offer, db)
+    await context.transition_to(status, current_user)
         
     await db.commit()
     return {"message": f"Transfer offer {status.value}"}
@@ -219,31 +210,15 @@ async def update_contract_offer(
     if not is_my_pro_contract and not is_my_team_contract:
         raise HTTPException(status_code=403, detail="Not your contract")
         
-    offer.status = status
-    if status == ContractState.COUNTER_OFFER:
-        if salary is not None:
-            offer.salary = salary
-        if duration_months is not None:
-            offer.duration_months = duration_months
-        if buyout_clause is not None:
-            offer.buyout_clause = buyout_clause
-        
-    if status == ContractState.ACTIVE:
-        other_contracts = await db.execute(
-            select(Contract)
-            .where(
-                Contract.pro_id == offer.pro_id, 
-                Contract.status == ContractState.ACTIVE,
-                Contract.id != offer.id
-            )
-        )
-        for c in other_contracts.scalars().all():
-            c.status = ContractState.FINISHED
-            
-        import datetime
-        from dateutil.relativedelta import relativedelta
-        offer.start_date = datetime.datetime.utcnow()
-        offer.end_date = offer.start_date + relativedelta(months=offer.duration_months)
+    from app.services.states.context import ContractContext
+    context = ContractContext(offer, db)
+    await context.transition_to(
+        status, 
+        current_user, 
+        salary=salary, 
+        duration_months=duration_months, 
+        buyout_clause=buyout_clause
+    )
             
     await db.commit()
     return {"message": f"Contract offer {status.value}"}
