@@ -30,6 +30,7 @@ class RoleResponse(RoleBase):
 class UserAdminResponse(BaseModel):
     id: int
     email: str
+    is_deleted: bool = False
     role: Optional[RoleBase] = None
     
     class Config:

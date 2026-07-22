@@ -1,7 +1,9 @@
-500 Error: 1 validation error for MarketPlayerResponse
-team.owner
-  Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s) [type=get_attribute_error, input_value=<app.models.esports.Team ...t at 0x000001E98A31F140>, input_type=Team]
-    For further information visit https://errors.pydantic.dev/2.13/v/get_attribute_error
+500 Error: 2 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 0, 'owner'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.models.esports.Team object at 0x0000021DBFA22B40>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 1, 'owner'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.models.esports.Team object at 0x0000021DBFA39A90>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+  File "C:\esports\backend\app\api\endpoints\teams.py", line 16, in get_all_teams
+    GET /api/teams
 Traceback (most recent call last):
   File "C:\esports\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
     await self.app(scope, receive, _send)
@@ -36,19 +38,14 @@ Traceback (most recent call last):
   File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 136, in app
     response = await f(request)
                ^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 690, in app
-    raw_response = await run_endpoint_function(
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 344, in run_endpoint_function
-    return await dependant.call(**values)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\app\api\endpoints\market.py", line 60, in get_market_players
-    response_list.append(MarketPlayerResponse(pro=pro, team=team_data))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\venv\Lib\site-packages\pydantic\main.py", line 263, in __init__
-    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-pydantic_core._pydantic_core.ValidationError: 1 validation error for MarketPlayerResponse
-team.owner
-  Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s) [type=get_attribute_error, input_value=<app.models.esports.Team ...t at 0x000001E98A31F140>, input_type=Team]
-    For further information visit https://errors.pydantic.dev/2.13/v/get_attribute_error
+  File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 711, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 316, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 2 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 0, 'owner'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.models.esports.Team object at 0x0000021DBFA22B40>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 1, 'owner'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.models.esports.Team object at 0x0000021DBFA39A90>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+  File "C:\esports\backend\app\api\endpoints\teams.py", line 16, in get_all_teams
+    GET /api/teams

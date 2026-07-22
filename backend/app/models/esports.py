@@ -60,9 +60,12 @@ class Contract(Base):
         Enum(ContractState, name="contract_state_enum", native_enum=True),
         default=ContractState.PENDING
     )
+    
+    transfer_offer_id: Mapped[Optional[int]] = mapped_column(ForeignKey("transfer_offers.id", ondelete="SET NULL"), nullable=True)
 
     team: Mapped["Team"] = relationship(back_populates="contracts")
     pro: Mapped["ProProfile"] = relationship()
+    transfer_offer: Mapped[Optional["TransferOffer"]] = relationship()
 
 
 class TransferOffer(Base):

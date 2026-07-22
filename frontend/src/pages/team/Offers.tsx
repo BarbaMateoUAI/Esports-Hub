@@ -8,7 +8,7 @@ export default function Offers() {
   const [data, setData] = useState<{ transfers: any[], contracts: any[] }>({ transfers: [], contracts: [] });
   const [loading, setLoading] = useState(true);
 
-  const [showCounter, setShowCounter] = useState<number | null>(null);
+  const [showCounter, setShowCounter] = useState<number | string | null>(null);
   const [counterAmount, setCounterAmount] = useState<number>(0);
 
   useEffect(() => {
@@ -26,10 +26,20 @@ export default function Offers() {
     }
   };
 
-  const handleTransfer = async (id: number, status: string) => {
+  const handleTransfer = async (id: number, status: string, amount?: number) => {
     try {
-      await api.put(`/market/offer/transfer/${id}?status=${status}`);
+      let url = `/market/offer/transfer/${id}?status=${status}`;
+      
+      if (amount !== undefined) {
+        const formData = new FormData();
+        formData.append('amount', amount.toString());
+        await api.put(url, formData);
+      } else {
+        await api.put(url);
+      }
+      
       fetchOffers();
+      setShowCounter(null);
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Error al actualizar traspaso');
     }
@@ -72,8 +82,9 @@ export default function Offers() {
           ) : (
             <div className="space-y-4">
               {data.transfers.map((t: any) => (
-                <div key={t.id} className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 flex justify-between items-center shadow-md">
-                  <div>
+                <div key={t.id} className="bg-[#1c2026] border border-gray-800 rounded-xl shadow-md">
+                  <div className="p-6 flex justify-between items-center">
+                    <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                         t.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
@@ -90,17 +101,37 @@ export default function Offers() {
                     <div className="text-hltv-accent font-black mt-2">${t.amount}</div>
                   </div>
                   
-                  {t.status === 'PENDING' && t.to_team.owner_id /* wait, to_team is us if we receive */ && (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleTransfer(t.id, 'ACCEPTED')} className="p-2 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded transition-colors">
-                        <Check className="w-5 h-5" />
-                      </button>
-                      <button onClick={() => handleTransfer(t.id, 'REJECTED')} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors">
-                        <X className="w-5 h-5" />
-                      </button>
+                  {(t.status === 'PENDING' || t.status === 'NEGOTIATING') && (
+                    <div className="flex flex-col gap-2 items-end">
+                      <div className="flex gap-2">
+                        <button onClick={() => handleTransfer(t.id, 'ACCEPTED')} className="p-2 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded transition-colors" title="Aceptar">
+                          <Check className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleTransfer(t.id, 'REJECTED')} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors" title="Rechazar">
+                          <X className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => { setShowCounter(`transfer-${t.id}`); setCounterAmount(t.amount); }} className="p-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded transition-colors" title="Contraofertar">
+                          <Handshake className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
+                  </div>
+                  {showCounter === `transfer-${t.id}` && (
+                  <div className="mt-4 p-4 bg-[#121519] border border-gray-700 rounded-lg flex items-center gap-4 animate-fade-in mx-6 mb-6">
+                    <input 
+                      type="number" 
+                      value={counterAmount} 
+                      onChange={e => setCounterAmount(Number(e.target.value))}
+                      className="bg-[#1c2026] border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-hltv-accent"
+                    />
+                    <button onClick={() => handleTransfer(t.id, 'NEGOTIATING', counterAmount)} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-bold transition-colors text-sm">
+                      Enviar Contraoferta
+                    </button>
+                    <button onClick={() => setShowCounter(null)} className="text-gray-400 hover:text-white text-sm">Cancelar</button>
+                  </div>
+                )}
+              </div>
               ))}
             </div>
           )}
@@ -146,7 +177,7 @@ export default function Offers() {
                         <button onClick={() => handleContract(c.id, 'REJECTED')} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors" title="Rechazar">
                           <X className="w-5 h-5" />
                         </button>
-                        <button onClick={() => { setShowCounter(c.id); setCounterAmount(c.salary); }} className="p-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded transition-colors" title="Contraofertar">
+                        <button onClick={() => { setShowCounter(`contract-${c.id}`); setCounterAmount(c.salary); }} className="p-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded transition-colors" title="Contraofertar">
                           <Handshake className="w-5 h-5" />
                         </button>
                       </div>
@@ -165,7 +196,7 @@ export default function Offers() {
                   )}
                 </div>
 
-                {showCounter === c.id && (
+                {showCounter === `contract-${c.id}` && (
                   <div className="mt-4 p-4 bg-[#121519] border border-gray-700 rounded-lg flex items-center gap-4 animate-fade-in">
                     <input 
                       type="number" 

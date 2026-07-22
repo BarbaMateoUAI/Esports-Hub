@@ -1,6 +1,7 @@
 import enum
+import datetime
 from typing import List, Optional
-from sqlalchemy import String, Integer, ForeignKey, Table, Column, Enum, Boolean
+from sqlalchemy import String, Integer, ForeignKey, Table, Column, Enum, Boolean, Date
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
@@ -45,6 +46,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
     role_id: Mapped[Optional[int]] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"))
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, server_default='false')
 
     role: Mapped[Optional["Role"]] = relationship(back_populates="users")
     
@@ -64,7 +66,7 @@ class ProProfile(Base):
     
     full_name: Mapped[str] = mapped_column(String(100))
     nickname: Mapped[str] = mapped_column(String(50), index=True)
-    age: Mapped[int] = mapped_column(Integer)
+    birth_date: Mapped[datetime.date] = mapped_column(Date)
     photo_url: Mapped[Optional[str]] = mapped_column(String(255))
     
     roles_in_game: Mapped[List[CS2Role]] = mapped_column(

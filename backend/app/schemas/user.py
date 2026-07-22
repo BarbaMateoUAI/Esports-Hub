@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
+from datetime import date
 from app.models.users import CS2Role
 
 class UserBase(BaseModel):
@@ -11,7 +12,7 @@ class UserCreate(UserBase):
 class ProProfileCreate(BaseModel):
     full_name: str
     nickname: str
-    age: int
+    birth_date: date
     photo_url: Optional[str] = None
     roles_in_game: List[CS2Role] = []
 
@@ -43,7 +44,7 @@ class ProProfileResponse(BaseModel):
     id: int
     full_name: str
     nickname: str
-    age: int
+    birth_date: date
     photo_url: Optional[str] = None
     roles_in_game: List[CS2Role] = []
     class Config:

@@ -17,14 +17,21 @@ router = APIRouter()
 class MarketPlayerResponse(BaseModel):
     pro: ProProfileResponse
     team: Optional[TeamResponse] = None
+    contract: Optional[ContractResponse] = None
 
     class Config:
         from_attributes = True
+
+from datetime import date
 
 @router.get("/players", response_model=List[MarketPlayerResponse])
 async def get_market_players(
     search: Optional[str] = None,
     filter_status: Optional[str] = None, # "free", "team", "all"
+    roles: Optional[str] = None,
+    min_age: Optional[int] = None,
+    max_age: Optional[int] = None,
+    team_name: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
     query = select(ProProfile).options(
@@ -42,8 +49,24 @@ async def get_market_players(
     result = await db.execute(query)
     pros = result.scalars().all()
     
+    role_list = roles.split(",") if roles else []
+    today = date.today()
+    
     response_list = []
     for pro in pros:
+        # Age filter
+        if pro.birth_date:
+            age = today.year - pro.birth_date.year - ((today.month, today.day) < (pro.birth_date.month, pro.birth_date.day))
+            if min_age is not None and age < min_age:
+                continue
+            if max_age is not None and age > max_age:
+                continue
+        
+        # Roles filter
+        if role_list:
+            if not pro.roles_in_game or not any(role.value in role_list for role in pro.roles_in_game):
+                continue
+                
         contract_result = await db.execute(
             select(Contract).options(selectinload(Contract.team).selectinload(Team.owner))
             .where(Contract.pro_id == pro.id, Contract.status == ContractState.ACTIVE)
@@ -57,7 +80,13 @@ async def get_market_players(
             continue
             
         team_data = active_contract.team if active_contract else None
-        response_list.append(MarketPlayerResponse(pro=pro, team=team_data))
+        
+        # Team name filter
+        if team_name and team_name.strip():
+            if not team_data or team_name.lower() not in team_data.name.lower():
+                continue
+                
+        response_list.append(MarketPlayerResponse(pro=pro, team=team_data, contract=active_contract))
         
     return response_list
 
@@ -156,6 +185,7 @@ async def get_my_offers(
 async def update_transfer_offer(
     offer_id: int,
     status: TransferOfferState,
+    amount: Optional[float] = Form(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -173,12 +203,12 @@ async def update_transfer_offer(
     if not offer:
         raise HTTPException(status_code=404, detail="Offer not found")
         
-    if offer.to_team_id != team.id:
-        raise HTTPException(status_code=403, detail="Not your offer to accept/reject")
+    if offer.to_team_id != team.id and offer.from_team_id != team.id:
+        raise HTTPException(status_code=403, detail="Not your offer to update")
         
     from app.services.states.context import TransferOfferContext
     context = TransferOfferContext(offer, db)
-    await context.transition_to(status, current_user)
+    await context.transition_to(status, current_user, amount=amount)
         
     await db.commit()
     return {"message": f"Transfer offer {status.value}"}

@@ -56,7 +56,7 @@ async def create_user_with_pro_profile(db: AsyncSession, user_in: UserCreate, pr
         user_id=db_user.id,
         full_name=profile_in.full_name,
         nickname=profile_in.nickname,
-        age=profile_in.age,
+        birth_date=profile_in.birth_date,
         photo_url=profile_in.photo_url,
         roles_in_game=profile_in.roles_in_game
     )
@@ -98,6 +98,8 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     user = result.scalars().first()
     
     if not user:
+        return None
+    if user.is_deleted:
         return None
     if not verify_password(password, user.hashed_password):
         return None

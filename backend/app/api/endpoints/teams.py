@@ -13,6 +13,11 @@ import uuid
 
 router = APIRouter()
 
+@router.get("", response_model=list[TeamResponse])
+async def get_all_teams(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Team).options(selectinload(Team.owner)))
+    return result.scalars().all()
+
 @router.get("/mine", response_model=TeamResponse)
 async def get_my_team(
     current_user: User = Depends(get_current_user),

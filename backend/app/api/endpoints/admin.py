@@ -59,6 +59,40 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
+    user.is_deleted = True
+    await db.commit()
+    return None
+
+@router.post("/users/{user_id}/recover", response_model=UserAdminResponse)
+async def recover_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    user_result = await db.execute(select(User).where(User.id == user_id).options(selectinload(User.role)))
+    user = user_result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.is_deleted = False
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+@router.delete("/users/{user_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+async def permanent_delete_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
+        
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
     await db.delete(user)
     await db.commit()
     return None
@@ -191,8 +225,16 @@ async def get_admin_reports(
             roles_count[r] = roles_count.get(r, 0) + 1
     roles_distribution = [{"name": k, "value": v} for k, v in roles_count.items()]
     
-    ages = (await db.execute(select(ProProfile.age, func.count(ProProfile.id)).group_by(ProProfile.age))).all()
-    age_distribution = [{"age": int(a), "count": int(c)} for a, c in ages if a is not None]
+    from datetime import date
+    profiles_dates = (await db.execute(select(ProProfile.birth_date))).scalars().all()
+    today = date.today()
+    age_count = {}
+    for bdate in profiles_dates:
+        if bdate:
+            age = today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day))
+            age_count[age] = age_count.get(age, 0) + 1
+            
+    age_distribution = [{"age": k, "count": v} for k, v in age_count.items()]
     age_distribution.sort(key=lambda x: x["age"])
     
     team_query = (

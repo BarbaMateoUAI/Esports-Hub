@@ -24,7 +24,8 @@ class PendingTransferState(BaseTransferState):
             salary=float(self.offer.amount) * 0.10,
             duration_months=6,
             buyout_clause=float(self.offer.amount) * 2,
-            status=ContractState.PENDING
+            status=ContractState.PENDING,
+            transfer_offer_id=self.offer.id
         )
         self.db.add(new_contract)
 
@@ -51,7 +52,8 @@ class NegotiatingTransferState(BaseTransferState):
             salary=float(self.offer.amount) * 0.10,
             duration_months=6,
             buyout_clause=float(self.offer.amount) * 2,
-            status=ContractState.PENDING
+            status=ContractState.PENDING,
+            transfer_offer_id=self.offer.id
         )
         self.db.add(new_contract)
 

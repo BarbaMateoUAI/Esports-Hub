@@ -19,7 +19,7 @@ export default function Register() {
   const [fullName, setFullName] = useState('');
   
   const [nickname, setNickname] = useState('');
-  const [age, setAge] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   
   const toggleRole = (role: string) => {
@@ -46,7 +46,7 @@ export default function Register() {
             profile: {
               full_name: fullName,
               nickname,
-              age: parseInt(age),
+              birth_date: birthDate,
               roles_in_game: selectedRoles
             }
           });
@@ -198,16 +198,14 @@ export default function Register() {
                     </div>
 
                     <div className="flex-[0.5]">
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Age</label>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Fecha de Nacimiento</label>
                       <input
-                        type="number"
+                        type="date"
                         required={mode === 'advanced' && profileType === 'pro'}
-                        min="13"
-                        max="99"
-                        value={age}
-                        onChange={e => setAge(e.target.value)}
+                        max={new Date().toISOString().split("T")[0]}
+                        value={birthDate}
+                        onChange={e => setBirthDate(e.target.value)}
                         className="w-full bg-[#121519] border border-gray-700 rounded-lg py-2.5 px-4 text-hltv-textLight focus:outline-none focus:border-blue-500 transition-colors"
-                        placeholder="21"
                       />
                     </div>
                   </div>

@@ -3,7 +3,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.future import select
 
-from app.models.esports import ContractState, Contract
+from app.models.esports import ContractState, Contract, TransferOffer, TransferOfferState
 from app.services.states.base import BaseContractState
 
 class PendingContractState(BaseContractState):
@@ -11,7 +11,7 @@ class PendingContractState(BaseContractState):
         if new_status == ContractState.ACTIVE:
             await self._activate_contract()
         elif new_status == ContractState.REJECTED:
-            self.contract.status = ContractState.REJECTED
+            await self._handle_rejection()
         elif new_status == ContractState.COUNTER_OFFER:
             self._apply_counter_offer(**kwargs)
         else:
@@ -32,6 +32,16 @@ class PendingContractState(BaseContractState):
         self.contract.start_date = datetime.datetime.utcnow()
         self.contract.end_date = self.contract.start_date + relativedelta(months=self.contract.duration_months)
         self.contract.status = ContractState.ACTIVE
+
+    async def _handle_rejection(self):
+        self.contract.status = ContractState.REJECTED
+        if self.contract.transfer_offer_id:
+            transfer_offer_result = await self.db.execute(
+                select(TransferOffer).where(TransferOffer.id == self.contract.transfer_offer_id)
+            )
+            offer = transfer_offer_result.scalars().first()
+            if offer:
+                offer.status = TransferOfferState.REJECTED
 
     def _apply_counter_offer(self, salary=None, duration_months=None, buyout_clause=None, **kwargs):
         if salary is not None:
@@ -48,7 +58,7 @@ class CounterOfferContractState(BaseContractState):
         if new_status == ContractState.ACTIVE:
             await self._activate_contract()
         elif new_status == ContractState.REJECTED:
-            self.contract.status = ContractState.REJECTED
+            await self._handle_rejection()
         elif new_status == ContractState.COUNTER_OFFER:
             self._apply_counter_offer(**kwargs)
         else:
@@ -69,6 +79,16 @@ class CounterOfferContractState(BaseContractState):
         self.contract.start_date = datetime.datetime.utcnow()
         self.contract.end_date = self.contract.start_date + relativedelta(months=self.contract.duration_months)
         self.contract.status = ContractState.ACTIVE
+
+    async def _handle_rejection(self):
+        self.contract.status = ContractState.REJECTED
+        if self.contract.transfer_offer_id:
+            transfer_offer_result = await self.db.execute(
+                select(TransferOffer).where(TransferOffer.id == self.contract.transfer_offer_id)
+            )
+            offer = transfer_offer_result.scalars().first()
+            if offer:
+                offer.status = TransferOfferState.REJECTED
 
     def _apply_counter_offer(self, salary=None, duration_months=None, buyout_clause=None, **kwargs):
         if salary is not None:
