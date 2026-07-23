@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const CS2_ROLES = ["Entry", "AWP", "Support", "Lurker", "IGL"];
+const COUNTRIES = ["ARG", "URU", "FRA", "USA", "BRA", "DEN", "TUR", "RUS", "UKR"];
 
 export default function Register() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [country, setCountry] = useState('ARG');
   
   const [nickname, setNickname] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -45,6 +47,7 @@ export default function Register() {
             user: { email, password },
             profile: {
               full_name: fullName,
+              country,
               nickname,
               birth_date: birthDate,
               roles_in_game: selectedRoles
@@ -54,7 +57,8 @@ export default function Register() {
           await api.post('/users/register/owner', {
             user: { email, password },
             profile: {
-              full_name: fullName
+              full_name: fullName,
+              country
             }
           });
         }
@@ -177,6 +181,20 @@ export default function Register() {
                     placeholder="John Doe"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Country</label>
+                <select
+                  required={mode === 'advanced'}
+                  value={country}
+                  onChange={e => setCountry(e.target.value)}
+                  className="w-full bg-[#121519] border border-gray-700 rounded-lg py-2.5 px-4 text-hltv-textLight focus:outline-none focus:border-blue-500 transition-colors"
+                >
+                  {COUNTRIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
 
               {profileType === 'pro' && (

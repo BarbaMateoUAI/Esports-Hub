@@ -28,15 +28,21 @@ async def update_user_role(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    user_result = await db.execute(select(User).where(User.id == user_id))
+    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+        
+    if user.role and user.role.name == "Admin":
+        raise HTTPException(status_code=403, detail="No se puede modificar el rol del Administrador principal")
         
     role_result = await db.execute(select(Role).where(Role.id == role_id))
     role = role_result.scalars().first()
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
+        
+    if role.name == "Admin":
+        raise HTTPException(status_code=403, detail="No se puede asignar el rol de Admin a otros usuarios")
         
     user.role_id = role.id
     await db.commit()
@@ -54,10 +60,13 @@ async def delete_user(
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
         
-    user_result = await db.execute(select(User).where(User.id == user_id))
+    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+        
+    if user.role and user.role.name == "Admin":
+        raise HTTPException(status_code=403, detail="No se puede dar de baja al Administrador principal")
         
     user.is_deleted = True
     await db.commit()
@@ -74,6 +83,9 @@ async def recover_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
+    if user.role and user.role.name == "Admin":
+        raise HTTPException(status_code=403, detail="El Administrador principal no puede ser modificado")
+        
     user.is_deleted = False
     await db.commit()
     await db.refresh(user)
@@ -88,10 +100,13 @@ async def permanent_delete_user(
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
         
-    user_result = await db.execute(select(User).where(User.id == user_id))
+    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+        
+    if user.role and user.role.name == "Admin":
+        raise HTTPException(status_code=403, detail="No se puede eliminar permanentemente al Administrador principal")
         
     await db.delete(user)
     await db.commit()

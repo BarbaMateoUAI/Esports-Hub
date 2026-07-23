@@ -38,8 +38,7 @@ async def get_current_user(
         .where(User.email == email)
         .options(
             selectinload(User.role),
-            selectinload(User.pro_profile),
-            selectinload(User.owner_profile)
+            selectinload(User.person)
         )
     )
     user = result.scalars().first()

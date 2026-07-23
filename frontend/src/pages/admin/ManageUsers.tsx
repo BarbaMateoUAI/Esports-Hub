@@ -131,40 +131,42 @@ export default function ManageUsers() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    {!user.is_deleted ? (
-                      <>
-                        <button 
-                          onClick={() => setEditingRoleUserId(user.id)}
-                          className="px-3 py-1.5 text-xs font-bold bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors"
-                        >
-                          Cambiar Rol
-                        </button>
-                        
-                        <button 
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="p-1.5 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors"
-                          title="Dar de baja"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => handleRecoverUser(user.id)}
-                          className="px-3 py-1.5 text-xs font-bold bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 rounded transition-colors"
-                        >
-                          Restaurar
-                        </button>
-                        
-                        <button 
-                          onClick={() => handlePermanentDeleteUser(user.id)}
-                          className="px-3 py-1.5 text-xs font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors"
-                          title="Eliminar Definitivamente"
-                        >
-                          Eliminar
-                        </button>
-                      </>
+                    {user.role?.name !== 'Admin' && (
+                      !user.is_deleted ? (
+                        <>
+                          <button 
+                            onClick={() => setEditingRoleUserId(user.id)}
+                            className="px-3 py-1.5 text-xs font-bold bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors"
+                          >
+                            Cambiar Rol
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="p-1.5 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors"
+                            title="Dar de baja"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => handleRecoverUser(user.id)}
+                            className="px-3 py-1.5 text-xs font-bold bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 rounded transition-colors"
+                          >
+                            Restaurar
+                          </button>
+                          
+                          <button 
+                            onClick={() => handlePermanentDeleteUser(user.id)}
+                            className="px-3 py-1.5 text-xs font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors"
+                            title="Eliminar Definitivamente"
+                          >
+                            Eliminar
+                          </button>
+                        </>
+                      )
                     )}
                   </div>
                 </td>

@@ -9,16 +9,18 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class ProProfileCreate(BaseModel):
+class PersonBase(BaseModel):
     full_name: str
+    photo_url: Optional[str] = None
+    country: Optional[str] = None
+
+class ProProfileCreate(PersonBase):
     nickname: str
     birth_date: date
-    photo_url: Optional[str] = None
     roles_in_game: List[CS2Role] = []
 
-class OwnerProfileCreate(BaseModel):
-    full_name: str
-    photo_url: Optional[str] = None
+class OwnerProfileCreate(PersonBase):
+    pass
 
 class UserProRegistration(BaseModel):
     user: UserCreate
@@ -40,20 +42,16 @@ class Token(BaseModel):
     token_type: str
     role: str
 
-class ProProfileResponse(BaseModel):
+class ProProfileResponse(PersonBase):
     id: int
-    full_name: str
     nickname: str
     birth_date: date
-    photo_url: Optional[str] = None
     roles_in_game: List[CS2Role] = []
     class Config:
         from_attributes = True
 
-class OwnerProfileResponse(BaseModel):
+class OwnerProfileResponse(PersonBase):
     id: int
-    full_name: str
-    photo_url: Optional[str] = None
     class Config:
         from_attributes = True
 

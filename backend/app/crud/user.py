@@ -58,6 +58,7 @@ async def create_user_with_pro_profile(db: AsyncSession, user_in: UserCreate, pr
         nickname=profile_in.nickname,
         birth_date=profile_in.birth_date,
         photo_url=profile_in.photo_url,
+        country=profile_in.country,
         roles_in_game=profile_in.roles_in_game
     )
     db.add(db_profile)
@@ -83,7 +84,8 @@ async def create_user_with_owner_profile(db: AsyncSession, user_in: UserCreate, 
     db_profile = OwnerProfile(
         user_id=db_user.id,
         full_name=profile_in.full_name,
-        photo_url=profile_in.photo_url
+        photo_url=profile_in.photo_url,
+        country=profile_in.country
     )
     db.add(db_profile)
     await db.commit()

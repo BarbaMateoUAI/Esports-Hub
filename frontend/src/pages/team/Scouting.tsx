@@ -335,7 +335,7 @@ export default function Scouting() {
       )}
 
       {selectedDetailPlayer && (
-        <div className="absolute inset-0 bg-[#121519]/90 backdrop-blur-sm z-10 flex items-center justify-center p-4 overflow-y-auto" onClick={() => setSelectedDetailPlayer(null)}>
+        <div className="fixed inset-0 bg-[#121519]/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={() => setSelectedDetailPlayer(null)}>
           <div className="bg-[#1c2026] border border-gray-800 rounded-xl p-8 max-w-sm w-full flex flex-col items-center animate-fade-in shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setSelectedDetailPlayer(null)} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">✕</button>
 

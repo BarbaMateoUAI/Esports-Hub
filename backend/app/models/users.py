@@ -50,40 +50,66 @@ class User(Base):
 
     role: Mapped[Optional["Role"]] = relationship(back_populates="users")
     
-    pro_profile: Mapped[Optional["ProProfile"]] = relationship(
-        back_populates="user", uselist=False, cascade="all, delete-orphan"
-    )
-    owner_profile: Mapped[Optional["OwnerProfile"]] = relationship(
+    person: Mapped[Optional["Person"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
 
+    @property
+    def pro_profile(self) -> Optional["ProProfile"]:
+        if isinstance(self.person, ProProfile):
+            return self.person
+        return None
 
-class ProProfile(Base):
-    __tablename__ = "pro_profiles"
+    @property
+    def owner_profile(self) -> Optional["OwnerProfile"]:
+        if isinstance(self.person, OwnerProfile):
+            return self.person
+        return None
+
+
+class Person(Base):
+    __tablename__ = "persons"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
     
     full_name: Mapped[str] = mapped_column(String(100))
+    photo_url: Mapped[Optional[str]] = mapped_column(String(255))
+    country: Mapped[Optional[str]] = mapped_column(String(3))
+    
+    type: Mapped[str] = mapped_column(String(50))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "person",
+        "polymorphic_on": "type",
+    }
+
+    user: Mapped["User"] = relationship(back_populates="person")
+
+
+class ProProfile(Person):
+    __tablename__ = "pro_profiles"
+
+    id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="CASCADE"), primary_key=True)
+    
     nickname: Mapped[str] = mapped_column(String(50), index=True)
     birth_date: Mapped[datetime.date] = mapped_column(Date)
-    photo_url: Mapped[Optional[str]] = mapped_column(String(255))
     
     roles_in_game: Mapped[List[CS2Role]] = mapped_column(
         ARRAY(Enum(CS2Role, name="cs2role_enum", native_enum=True)),
         default=list
     )
 
-    user: Mapped["User"] = relationship(back_populates="pro_profile")
+    __mapper_args__ = {
+        "polymorphic_identity": "pro_profile",
+    }
 
 
-class OwnerProfile(Base):
+class OwnerProfile(Person):
     __tablename__ = "owner_profiles"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
-    
-    full_name: Mapped[str] = mapped_column(String(100))
-    photo_url: Mapped[Optional[str]] = mapped_column(String(255))
+    id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="CASCADE"), primary_key=True)
 
-    user: Mapped["User"] = relationship(back_populates="owner_profile")
+    __mapper_args__ = {
+        "polymorphic_identity": "owner_profile",
+    }
