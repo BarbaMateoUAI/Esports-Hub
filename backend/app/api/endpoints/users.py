@@ -95,13 +95,13 @@ async def update_my_profile(
         .where(User.id == current_user.id)
     )
     user = result.scalars().first()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
     if not user.pro_profile and not user.owner_profile:
         raise HTTPException(status_code=400, detail="Tu cuenta no posee un perfil para actualizar (foto o apodo).")
-        
+
     photo_url = None
     if photo:
         os.makedirs("uploads", exist_ok=True)
@@ -111,14 +111,13 @@ async def update_my_profile(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(photo.file, buffer)
         photo_url = f"http://localhost:8000/uploads/{file_name}"
-        
+
     if user.pro_profile:
         if nickname is not None:
             user.pro_profile.nickname = nickname
         if photo_url:
             user.pro_profile.photo_url = photo_url
         if roles is not None:
-            # parse roles string into CS2Role enums
             role_values = [r.strip() for r in roles.split(',') if r.strip()]
             valid_roles = []
             for rv in role_values:
@@ -128,13 +127,13 @@ async def update_my_profile(
                 except ValueError:
                     pass
             user.pro_profile.roles_in_game = valid_roles
-            
+
     elif user.owner_profile:
         if photo_url:
             user.owner_profile.photo_url = photo_url
-            
+
     await db.commit()
-    
+
     result = await db.execute(
         select(User)
         .options(selectinload(User.person))
@@ -161,12 +160,12 @@ async def recover_password(
     if not user:
         return {"message": "Se ha enviado un enlace de recuperación."}
     token = create_password_reset_token(user.email)
-    
+
     from app.core.email import send_password_reset_email
     import asyncio
-    
+
     await send_password_reset_email(user.email, token)
-    
+
     return {"message": "Se ha enviado un enlace de recuperación."}
 
 @router.post("/reset-password")
@@ -177,10 +176,10 @@ async def reset_password(
     email = verify_password_reset_token(data.token)
     if not email:
         raise HTTPException(status_code=400, detail="El token es inválido o ha expirado.")
-        
+
     user = await crud_user.get_user_by_email(db, email)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-        
+
     await crud_user.update_user_password(db, user, data.new_password)
     return {"message": "Contraseña actualizada exitosamente."}

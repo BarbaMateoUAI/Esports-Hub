@@ -32,7 +32,7 @@ class Team(Base):
 
     owner: Mapped["OwnerProfile"] = relationship()
     contracts: Mapped[List["Contract"]] = relationship(back_populates="team", cascade="all, delete-orphan")
-    
+
     outgoing_offers: Mapped[List["TransferOffer"]] = relationship(
         foreign_keys="[TransferOffer.from_team_id]",
         back_populates="from_team"
@@ -42,14 +42,13 @@ class Team(Base):
         back_populates="to_team"
     )
 
-
 class Contract(Base):
     __tablename__ = "contracts"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"))
     pro_id: Mapped[int] = mapped_column(ForeignKey("pro_profiles.id", ondelete="CASCADE"))
-    
+
     salary: Mapped[float] = mapped_column(Numeric(10, 2))
     duration_months: Mapped[int] = mapped_column(Integer, default=6)
     buyout_clause: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
@@ -60,15 +59,14 @@ class Contract(Base):
         Enum(ContractState, name="contract_state_enum", native_enum=True),
         default=ContractState.PENDING
     )
-    
+
     is_renegotiation: Mapped[bool] = mapped_column(Boolean, default=False)
-    
+
     transfer_offer_id: Mapped[Optional[int]] = mapped_column(ForeignKey("transfer_offers.id", ondelete="SET NULL"), nullable=True)
 
     team: Mapped["Team"] = relationship(back_populates="contracts")
     pro: Mapped["ProProfile"] = relationship()
     transfer_offer: Mapped[Optional["TransferOffer"]] = relationship()
-
 
 class TransferOffer(Base):
     __tablename__ = "transfer_offers"
@@ -77,13 +75,13 @@ class TransferOffer(Base):
     from_team_id: Mapped[int] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"))
     to_team_id: Mapped[int] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"))
     pro_id: Mapped[int] = mapped_column(ForeignKey("pro_profiles.id", ondelete="CASCADE"))
-    
+
     amount: Mapped[float] = mapped_column(Numeric(12, 2))
-    
+
     proposed_salary: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
     proposed_duration_months: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     proposed_buyout_clause: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
-    
+
     status: Mapped[TransferOfferState] = mapped_column(
         Enum(TransferOfferState, name="transfer_offer_state_enum", native_enum=True),
         default=TransferOfferState.PENDING

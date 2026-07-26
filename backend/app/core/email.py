@@ -18,7 +18,7 @@ def _send_email_sync(to_email: str, subject: str, body: str):
 
 async def send_password_reset_email(to_email: str, token: str):
     link = f"http://localhost:5173/reset-password?token={token}"
-    
+
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
         print(f"\n[AVISO] SMTP no configurado en .env.")
         print(f"[{to_email}] RECUPERACIÓN DE CONTRASEÑA SIMULADA:")
@@ -27,7 +27,7 @@ async def send_password_reset_email(to_email: str, token: str):
 
     subject = "Recuperación de Contraseña - E-Sports Hub"
     body = f"Has solicitado restablecer tu contraseña.\n\nHaz click aqui para cambiar tu contrasena: {link}\n\nSi no fuiste tú, ignora este correo."
-    
+
     try:
         await asyncio.to_thread(_send_email_sync, to_email, subject, body)
     except Exception as e:

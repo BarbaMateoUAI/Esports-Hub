@@ -68,7 +68,6 @@ export default function AdminReports() {
         <h2 className="text-2xl font-black text-white">Reportes y Estadísticas</h2>
       </div>
 
-      {/* Tarjetas de Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 shadow-lg flex items-center gap-4">
           <div className="p-3 bg-blue-500/10 rounded-lg">
@@ -102,7 +101,7 @@ export default function AdminReports() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Distribución de Roles */}
+
         <div className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 shadow-lg">
           <h3 className="text-lg font-bold text-white mb-4">Jugadores por Rol (In-Game)</h3>
           <div className="h-64 w-full">
@@ -131,7 +130,6 @@ export default function AdminReports() {
           </div>
         </div>
 
-        {/* Gráfico de Edades */}
         <div className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 shadow-lg">
           <h3 className="text-lg font-bold text-white mb-4">Distribución por Edades</h3>
           <div className="h-64 w-full">
@@ -157,7 +155,6 @@ export default function AdminReports() {
         </div>
       </div>
 
-      {/* Gráfico de Finanzas de Equipos */}
       <div className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 shadow-lg">
         <h3 className="text-lg font-bold text-white mb-4">Finanzas por Equipo (Contratos Activos)</h3>
         <div className="h-80 w-full">

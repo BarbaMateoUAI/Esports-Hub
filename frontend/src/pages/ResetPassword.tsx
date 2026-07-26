@@ -10,7 +10,7 @@ export default function ResetPassword() {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -23,12 +23,12 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden.');
       return;
     }
-    
+
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres.');
       return;
@@ -44,11 +44,11 @@ export default function ResetPassword() {
         new_password: password
       });
       setMessage(response.data.message);
-      
+
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-      
+
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ocurrió un error al restablecer la contraseña.');
     } finally {

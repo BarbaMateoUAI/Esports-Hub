@@ -32,7 +32,7 @@ class UserAdminResponse(BaseModel):
     email: str
     is_deleted: bool = False
     role: Optional[RoleBase] = None
-    
+
     class Config:
         from_attributes = True
 

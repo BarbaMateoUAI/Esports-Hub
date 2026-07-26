@@ -24,7 +24,7 @@ async def get_my_team(
     db: AsyncSession = Depends(get_db)
 ):
     team = None
-    
+
     if current_user.owner_profile:
         result = await db.execute(
             select(Team)
@@ -45,10 +45,10 @@ async def get_my_team(
             team = active_contract.team
     else:
         raise HTTPException(status_code=403, detail="Only team owners or pro players can access this")
-    
+
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
-        
+
     return team
 
 @router.get("/{team_id}/roster", response_model=list[ContractResponse])
@@ -73,11 +73,11 @@ async def create_team(
 ):
     if not current_user.owner_profile:
         raise HTTPException(status_code=403, detail="Only team owners can create a team")
-        
+
     result = await db.execute(select(Team).where(Team.owner_id == current_user.owner_profile.id))
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="You already have a team")
-        
+
     logo_url = None
     if logo and logo.filename:
         os.makedirs("uploads", exist_ok=True)
@@ -87,7 +87,7 @@ async def create_team(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(logo.file, buffer)
         logo_url = f"http://localhost:8000/uploads/{file_name}"
-        
+
     new_team = Team(
         name=name,
         country=country,
@@ -96,7 +96,7 @@ async def create_team(
     )
     db.add(new_team)
     await db.commit()
-    
+
     result = await db.execute(
         select(Team)
         .options(selectinload(Team.owner))
@@ -116,22 +116,22 @@ async def update_my_team(
         f.write(f"update_my_team called! name={name}, country={country}, logo={'yes' if logo else 'no'}\n")
     if not current_user.owner_profile:
         raise HTTPException(status_code=403, detail="Only team owners can update their team")
-        
+
     result = await db.execute(
         select(Team)
         .options(selectinload(Team.owner))
         .where(Team.owner_id == current_user.owner_profile.id)
     )
     team = result.scalars().first()
-    
+
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
-        
+
     if name is not None:
         team.name = name
     if country is not None:
         team.country = country
-        
+
     if logo and logo.filename:
         os.makedirs("uploads", exist_ok=True)
         file_ext = logo.filename.split('.')[-1]
@@ -140,9 +140,9 @@ async def update_my_team(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(logo.file, buffer)
         team.logo_url = f"http://localhost:8000/uploads/{file_name}"
-        
+
     await db.commit()
-    
+
     result = await db.execute(
         select(Team)
         .options(selectinload(Team.owner))

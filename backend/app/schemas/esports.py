@@ -47,7 +47,7 @@ class ContractResponse(ContractBase):
 
 class ContractUpdate(BaseModel):
     status: ContractState
-    salary: Optional[float] = None # For counter offers
+    salary: Optional[float] = None
     duration_months: Optional[int] = None
     buyout_clause: Optional[float] = None
 

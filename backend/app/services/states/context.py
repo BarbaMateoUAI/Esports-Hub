@@ -18,7 +18,6 @@ from app.services.states.transfer_states import (
     NegotiatingTransferState
 )
 
-
 class ContractContext:
     def __init__(self, contract: Contract, db: AsyncSession):
         self.contract = contract
@@ -44,13 +43,12 @@ class ContractContext:
         await self.state.process_transition(new_status, current_user, **kwargs)
         self.state = self._get_state_instance()
 
-
 class TransferOfferContext:
     def __init__(self, offer: TransferOffer, db: AsyncSession):
         self.offer = offer
         self.db = db
         self.state = self._get_state_instance()
-        
+
     def _get_state_instance(self):
         status = self.offer.status
         if status == TransferOfferState.PENDING:

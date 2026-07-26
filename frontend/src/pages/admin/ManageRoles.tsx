@@ -19,12 +19,12 @@ export default function ManageRoles() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [formName, setFormName] = useState('');
   const [formPermissions, setFormPermissions] = useState<number[]>([]);
-  
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -79,7 +79,7 @@ export default function ManageRoles() {
   const handleSaveRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) return;
-    
+
     try {
       if (editingRole) {
         const res = await api.put(`/admin/roles/${editingRole.id}`, { 
@@ -147,7 +147,6 @@ export default function ManageRoles() {
         </button>
       </div>
 
-      {/* Tabla de Roles Activos */}
       <div className="bg-[#1c2026] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
         <div className="p-4 bg-[#232830] border-b border-gray-800">
           <h3 className="text-lg font-bold text-white">Roles Activos</h3>
@@ -209,7 +208,6 @@ export default function ManageRoles() {
         </table>
       </div>
 
-      {/* Tabla de Roles Borrados */}
       {deletedRoles.length > 0 && (
         <div className="bg-[#1c2026] border border-red-900/30 rounded-xl overflow-hidden shadow-lg opacity-80 hover:opacity-100 transition-opacity">
           <div className="p-4 bg-red-950/20 border-b border-red-900/30">
@@ -253,7 +251,6 @@ export default function ManageRoles() {
         </div>
       )}
 
-      {/* Modal Crear/Editar Rol */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1c2026] border border-gray-800 rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
@@ -265,7 +262,7 @@ export default function ManageRoles() {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSaveRole} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 overflow-y-auto space-y-6 flex-1">
                 <div>
@@ -314,7 +311,7 @@ export default function ManageRoles() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-6 border-t border-gray-800 bg-[#121519] flex justify-end gap-3">
                 <button 
                   type="button"

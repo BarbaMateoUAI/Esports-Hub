@@ -33,7 +33,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
-      {/* Sidebar Admin */}
+
       <aside className="w-full md:w-64 flex-shrink-0 space-y-2 bg-[#1c2026] border border-gray-800 rounded-xl p-4 self-start">
         <div className="mb-6 px-2">
           <h2 className="text-xs font-black text-gray-500 uppercase tracking-wider">Admin Panel</h2>
@@ -45,7 +45,6 @@ export default function AdminDashboard() {
         </nav>
       </aside>
 
-      {/* Contenido Principal Admin */}
       <main className="flex-1 bg-[#0d1015] rounded-xl">
         <Routes>
           <Route path="/" element={<Navigate to="/admin/users" replace />} />

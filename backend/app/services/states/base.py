@@ -20,13 +20,12 @@ class BaseContractState(ABC):
     async def process_transition(self, new_status: str, current_user: Any, **kwargs):
         """Processes the state transition based on the requested new_status."""
         pass
-        
+
     def raise_invalid_transition(self, new_status: str):
         raise HTTPException(
             status_code=400, 
             detail=f"Invalid transition from {self.contract.status.value} to {new_status}"
         )
-
 
 class BaseTransferState(ABC):
     def __init__(self, context):
@@ -44,7 +43,7 @@ class BaseTransferState(ABC):
     async def process_transition(self, new_status: str, current_user: Any, **kwargs):
         """Processes the state transition based on the requested new_status."""
         pass
-        
+
     def raise_invalid_transition(self, new_status: str):
         raise HTTPException(
             status_code=400, 

@@ -4,7 +4,7 @@ from app.core.config import settings
 
 engine = create_async_engine(
     settings.database_url,
-    echo=True, # Útil para ver las consultas en desarrollo
+    echo=True,
 )
 
 SessionLocal = async_sessionmaker(

@@ -8,10 +8,10 @@ const COUNTRIES = ["ARG", "URU", "FRA", "USA", "BRA", "DEN", "TUR", "RUS", "UKR"
 
 export default function Register() {
   const navigate = useNavigate();
-  
+
   const [mode, setMode] = useState<'regular' | 'advanced'>('regular');
   const [profileType, setProfileType] = useState<'pro' | 'owner'>('pro');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,11 +19,11 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [country, setCountry] = useState('ARG');
-  
+
   const [nickname, setNickname] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  
+
   const toggleRole = (role: string) => {
     setSelectedRoles(prev => 
       prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
@@ -63,7 +63,7 @@ export default function Register() {
           });
         }
       }
-      
+
       navigate('/login');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.');
@@ -84,7 +84,6 @@ export default function Register() {
             : 'Crea un perfil avanzado de Jugador o Dueño.'}
         </p>
 
-        {/* Profile Selector (Only for Advanced Mode) */}
         {mode === 'advanced' && (
           <div className="flex gap-4 mb-8 animate-fade-in">
             <button
@@ -99,7 +98,7 @@ export default function Register() {
               <Gamepad2 className="w-8 h-8 mb-2" />
               <span className="font-semibold">Pro Player</span>
             </button>
-            
+
             <button
               type="button"
               onClick={() => setProfileType('owner')}
@@ -127,7 +126,7 @@ export default function Register() {
             {mode === 'advanced' && (
               <h3 className="text-xl text-hltv-textLight border-b border-gray-700 pb-2">Account Details</h3>
             )}
-            
+
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
@@ -161,7 +160,6 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Advanced Profile Details */}
           {mode === 'advanced' && (
             <div className="space-y-4 pt-4 animate-fade-in">
               <h3 className="text-xl text-hltv-textLight border-b border-gray-700 pb-2">
@@ -267,8 +265,7 @@ export default function Register() {
           >
             {loading ? 'Procesando...' : mode === 'regular' ? 'Registrarse' : 'Crear Cuenta Avanzada'}
           </button>
-          
-          {/* Toggle Mode Link */}
+
           <div className="text-center mt-6">
             {mode === 'regular' ? (
               <button

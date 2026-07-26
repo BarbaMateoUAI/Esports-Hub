@@ -9,17 +9,17 @@ const CS2_ROLES = ['Entry', 'AWP', 'Support', 'Lurker', 'IGL', 'Coach', 'Analyst
 export default function Profile() {
   const { isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const [profileData, setProfileData] = useState<any>(null);
   const [nickname, setNickname] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
+
   const [activeTab, setActiveTab] = useState<'perfil' | 'contrato'>('perfil');
   const [contractData, setContractData] = useState<any>(null);
   const [loadingContract, setLoadingContract] = useState(false);
@@ -61,7 +61,7 @@ export default function Profile() {
     try {
       const res = await api.get('/users/me');
       setProfileData(res.data);
-      
+
       if (res.data.pro_profile) {
         setNickname(res.data.pro_profile.nickname || '');
         setSelectedRoles(res.data.pro_profile.roles_in_game || []);
@@ -87,7 +87,7 @@ export default function Profile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    
+
     try {
       const formData = new FormData();
       if (profileData?.pro_profile) {
@@ -99,11 +99,11 @@ export default function Profile() {
       if (selectedFile) {
         formData.append('photo', selectedFile);
       }
-      
+
       const res = await api.put('/users/me/profile', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       setProfileData(res.data);
       setIsEditing(false);
       alert('Perfil actualizado correctamente');
@@ -139,7 +139,7 @@ export default function Profile() {
 
   return (
     <div className="max-w-5xl mx-auto p-4 py-8 flex gap-8">
-      {/* Sidebar Navigation */}
+
       {isPro && (
         <div className="w-64 flex-shrink-0 space-y-2">
           <button
@@ -167,7 +167,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Main Content Area */}
       <div className="flex-1">
         {activeTab === 'perfil' && (
           <div className="bg-[#1c2026] border border-gray-800 rounded-xl overflow-hidden shadow-lg animate-fade-in">
@@ -197,7 +196,7 @@ export default function Profile() {
                 />
               </div>
             </div>
-            
+
             <div className="pt-20 px-8 pb-8">
               <div className="flex justify-between items-start mb-8">
                 <div>
@@ -209,7 +208,7 @@ export default function Profile() {
                   </p>
                   <p className="text-gray-400 mt-1">{profileData.email}</p>
                 </div>
-                
+
                 {!isAdmin && !isEditing && (
                   <button
                     type="button"
@@ -225,7 +224,7 @@ export default function Profile() {
               {!isAdmin && (
                 <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
                   <div className="space-y-4">
-                    
+
                     {currentProfile?.full_name && (
                       <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
@@ -323,7 +322,7 @@ export default function Profile() {
                         disabled={saving}
                         onClick={() => {
                           setIsEditing(false);
-                          fetchProfile(); // Reset fields
+                          fetchProfile();
                         }}
                         className="flex-1 bg-gray-800 hover:bg-gray-700 text-white px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                       >
@@ -334,7 +333,7 @@ export default function Profile() {
                   )}
                 </form>
               )}
-              
+
               {isAdmin && (
                 <div className="p-4 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-sm">
                   Tu cuenta tiene privilegios administrativos. No requieres un perfil público.

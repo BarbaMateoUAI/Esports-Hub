@@ -56,7 +56,7 @@ export default function ManageUsers() {
 
   const handleDeleteUser = async (userId: number) => {
     if (!window.confirm('¿Estás seguro de que quieres dar de baja a este usuario?')) return;
-    
+
     try {
       await api.delete(`/admin/users/${userId}`);
       setUsers(users.map(u => u.id === userId ? { ...u, is_deleted: true } : u));
@@ -140,7 +140,7 @@ export default function ManageUsers() {
                           >
                             Cambiar Rol
                           </button>
-                          
+
                           <button 
                             onClick={() => handleDeleteUser(user.id)}
                             className="p-1.5 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors"
@@ -157,7 +157,7 @@ export default function ManageUsers() {
                           >
                             Restaurar
                           </button>
-                          
+
                           <button 
                             onClick={() => handlePermanentDeleteUser(user.id)}
                             className="px-3 py-1.5 text-xs font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors"

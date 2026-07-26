@@ -50,7 +50,7 @@ async def create_user_with_pro_profile(db: AsyncSession, user_in: UserCreate, pr
         role_id=role.id
     )
     db.add(db_user)
-    await db.flush() # To get db_user.id for the profile
+    await db.flush()
 
     db_profile = ProProfile(
         user_id=db_user.id,
@@ -95,10 +95,10 @@ async def create_user_with_owner_profile(db: AsyncSession, user_in: UserCreate, 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     from app.core.security import verify_password
     from sqlalchemy.orm import selectinload
-    
+
     result = await db.execute(select(User).options(selectinload(User.role)).where(User.email == email))
     user = result.scalars().first()
-    
+
     if not user:
         return None
     if user.is_deleted:

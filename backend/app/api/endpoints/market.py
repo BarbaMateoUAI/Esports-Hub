@@ -35,7 +35,6 @@ async def get_market_players(
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
-    # Get current user's team if they are an owner
     my_team_id = None
     if current_user and current_user.owner_profile:
         my_team_result = await db.execute(select(Team).where(Team.owner_id == current_user.owner_profile.id))
@@ -46,7 +45,7 @@ async def get_market_players(
     query = select(ProProfile).options(
         selectinload(ProProfile.user)
     )
-    
+
     if search:
         query = query.where(
             or_(
@@ -54,53 +53,49 @@ async def get_market_players(
                 ProProfile.full_name.ilike(f"%{search}%")
             )
         )
-        
+
     result = await db.execute(query)
     pros = result.scalars().all()
-    
+
     role_list = roles.split(",") if roles else []
     today = date.today()
-    
+
     response_list = []
     for pro in pros:
-        # Age filter
         if pro.birth_date:
             age = today.year - pro.birth_date.year - ((today.month, today.day) < (pro.birth_date.month, pro.birth_date.day))
             if min_age is not None and age < min_age:
                 continue
             if max_age is not None and age > max_age:
                 continue
-        
-        # Roles filter
+
         if role_list:
             if not pro.roles_in_game or not any(role.value in role_list for role in pro.roles_in_game):
                 continue
-                
+
         contract_result = await db.execute(
             select(Contract).options(selectinload(Contract.team).selectinload(Team.owner))
             .where(Contract.pro_id == pro.id, Contract.status == ContractState.ACTIVE)
         )
         active_contract = contract_result.scalars().first()
-        
+
         has_team = active_contract is not None
         if filter_status == "free" and has_team:
             continue
         if filter_status == "team" and not has_team:
             continue
-            
+
         team_data = active_contract.team if active_contract else None
-        
-        # Filter out my own team's players
+
         if my_team_id and team_data and team_data.id == my_team_id:
             continue
-        
-        # Team name filter
+
         if team_name and team_name.strip():
             if not team_data or team_name.lower() not in team_data.name.lower():
                 continue
-                
+
         response_list.append(MarketPlayerResponse(pro=pro, team=team_data, contract=active_contract))
-        
+
     return response_list
 
 @router.post("/offer/renegotiate")
@@ -111,14 +106,13 @@ async def offer_renegotiate(
 ):
     if not current_user.pro_profile:
         raise HTTPException(status_code=403, detail="Only pro players can initiate renegotiation")
-        
-    # Get the active contract for the pro
+
     active_contract_result = await db.execute(
         select(Contract)
         .where(Contract.pro_id == current_user.pro_profile.id, Contract.status == ContractState.ACTIVE)
     )
     active_contract = active_contract_result.scalars().first()
-    
+
     if not active_contract:
         raise HTTPException(status_code=400, detail="You don't have an active contract to renegotiate")
 
@@ -145,12 +139,12 @@ async def offer_contract(
 ):
     if not current_user.owner_profile:
         raise HTTPException(status_code=403, detail="Only team owners can offer contracts")
-        
+
     team_result = await db.execute(select(Team).where(Team.owner_id == current_user.owner_profile.id))
     team = team_result.scalars().first()
     if not team:
         raise HTTPException(status_code=400, detail="You don't have a team yet")
-        
+
     new_contract = Contract(
         team_id=team.id,
         pro_id=offer.pro_id,
@@ -173,15 +167,15 @@ async def offer_transfer(
 ):
     if not current_user.owner_profile:
         raise HTTPException(status_code=403, detail="Only team owners can make transfer offers")
-        
+
     team_result = await db.execute(select(Team).where(Team.owner_id == current_user.owner_profile.id))
     team = team_result.scalars().first()
     if not team:
         raise HTTPException(status_code=400, detail="You don't have a team")
-        
+
     if team.id == offer.to_team_id:
         raise HTTPException(status_code=400, detail="Cannot transfer to your own team")
-        
+
     new_offer = TransferOffer(
         from_team_id=team.id,
         to_team_id=offer.to_team_id,
@@ -202,7 +196,7 @@ async def get_my_offers(
     db: AsyncSession = Depends(get_db)
 ):
     result_dict = {"transfers": [], "contracts": []}
-    
+
     if current_user.owner_profile:
         team_result = await db.execute(select(Team).where(Team.owner_id == current_user.owner_profile.id))
         team = team_result.scalars().first()
@@ -213,14 +207,14 @@ async def get_my_offers(
                 .where(or_(TransferOffer.from_team_id == team.id, TransferOffer.to_team_id == team.id))
             )
             result_dict["transfers"] = transfers_result.scalars().all()
-            
+
             contracts_result = await db.execute(
                 select(Contract)
                 .options(selectinload(Contract.pro), selectinload(Contract.team).selectinload(Team.owner))
                 .where(Contract.team_id == team.id)
             )
             result_dict["contracts"] = contracts_result.scalars().all()
-            
+
     if current_user.pro_profile:
         contracts_result = await db.execute(
             select(Contract)
@@ -228,7 +222,7 @@ async def get_my_offers(
             .where(Contract.pro_id == current_user.pro_profile.id)
         )
         result_dict["contracts"] = contracts_result.scalars().all()
-        
+
     return result_dict
 
 @router.put("/offer/transfer/{offer_id}")
@@ -241,64 +235,67 @@ async def update_transfer_offer(
 ):
     if not current_user.owner_profile:
         raise HTTPException(status_code=403, detail="Only team owners can update transfer offers")
-        
+
     team_result = await db.execute(select(Team).where(Team.owner_id == current_user.owner_profile.id))
     team = team_result.scalars().first()
     if not team:
         raise HTTPException(status_code=400, detail="You don't have a team")
-        
+
     offer_result = await db.execute(select(TransferOffer).where(TransferOffer.id == offer_id))
     offer = offer_result.scalars().first()
-    
+
     if not offer:
         raise HTTPException(status_code=404, detail="Offer not found")
-        
+
     if offer.to_team_id != team.id and offer.from_team_id != team.id:
         raise HTTPException(status_code=403, detail="Not your offer to update")
-        
+
     from app.services.states.context import TransferOfferContext
     context = TransferOfferContext(offer, db)
     await context.transition_to(status, current_user, amount=amount)
-        
+
     await db.commit()
     return {"message": f"Transfer offer {status.value}"}
+
+class ContractUpdateModel(BaseModel):
+    salary: Optional[float] = None
+    duration_months: Optional[int] = None
+    buyout_clause: Optional[float] = None
 
 @router.put("/offer/contract/{offer_id}")
 async def update_contract_offer(
     offer_id: int,
     status: ContractState,
-    salary: Optional[float] = Form(None),
-    duration_months: Optional[int] = Form(None),
-    buyout_clause: Optional[float] = Form(None),
+    update_data: ContractUpdateModel,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     if not current_user.pro_profile and not current_user.owner_profile:
         raise HTTPException(status_code=403, detail="You must be a pro or an owner to update contracts")
-        
+
     offer_result = await db.execute(
         select(Contract).options(selectinload(Contract.team)).where(Contract.id == offer_id)
     )
     offer = offer_result.scalars().first()
-    
+
     if not offer:
         raise HTTPException(status_code=404, detail="Contract not found")
-        
+
     is_my_pro_contract = current_user.pro_profile and offer.pro_id == current_user.pro_profile.id
     is_my_team_contract = current_user.owner_profile and offer.team and offer.team.owner_id == current_user.owner_profile.id
 
     if not is_my_pro_contract and not is_my_team_contract:
         raise HTTPException(status_code=403, detail="Not your contract")
-        
+
     from app.services.states.context import ContractContext
     context = ContractContext(offer, db)
     await context.transition_to(
         status, 
         current_user, 
-        salary=salary, 
-        duration_months=duration_months, 
-        buyout_clause=buyout_clause
+        salary=update_data.salary, 
+        duration_months=update_data.duration_months, 
+        buyout_clause=update_data.buyout_clause
     )
-            
+
     await db.commit()
     return {"message": f"Contract offer {status.value}"}

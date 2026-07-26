@@ -9,7 +9,7 @@ import { LogOut, UserCircle } from 'lucide-react';
 const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
-  
+
   return (
     <Link 
       to={to} 
@@ -37,8 +37,7 @@ const NavBar = () => {
     <nav className="bg-hltv-header border-b border-hltv-border sticky top-0 z-50 shadow-md">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-14">
-          
-          {/* Logo y Enlaces Principales */}
+
           <div className="flex items-center h-full">
             <Link to="/" className="flex items-center mr-8 gap-2 group">
               <div className="w-8 h-8 bg-hltv-accent rounded flex items-center justify-center font-black italic text-white shadow transform group-hover:scale-105 transition-transform">
@@ -49,34 +48,32 @@ const NavBar = () => {
               </span>
             </Link>
 
-            {/* Links de navegación (HLTV Style) */}
             <div className="hidden md:flex h-full space-x-1">
               <NavLink to="/">Partidos</NavLink>
               <NavLink to="/resultados">Resultados</NavLink>
               <NavLink to="/torneos">Torneos</NavLink>
-              
+
               {role === 'TeamOwner' && (
                 <>
                   <NavLink to="/my-team">Mi Equipo</NavLink>
                   <NavLink to="/scouting">Scouting</NavLink>
                 </>
               )}
-              
+
               {role === 'ProPlayer' && (
                 <NavLink to="/pro-team">Mi Equipo</NavLink>
               )}
-              
+
               {(role === 'TeamOwner' || role === 'ProPlayer') && (
                 <NavLink to="/offers">Ofertas</NavLink>
               )}
-              
+
               {role && !['ProPlayer', 'TeamOwner', 'Unknown'].includes(role) && (
                 <NavLink to="/admin">Panel Admin</NavLink>
               )}
             </div>
           </div>
 
-          {/* Sección de Usuario */}
           <div className="flex items-center h-full gap-3">
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
@@ -152,6 +149,7 @@ import MyTeam from './pages/team/MyTeam';
 import ProTeam from './pages/team/ProTeam';
 import Scouting from './pages/team/Scouting';
 import Offers from './pages/team/Offers';
+import ManagePlayers from './pages/team/ManagePlayers';
 
 export default function App() {
   return (
@@ -171,6 +169,7 @@ export default function App() {
               <Route path="/admin/*" element={<AdminDashboard />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/my-team" element={<MyTeam />} />
+              <Route path="/team/manage-players" element={<ManagePlayers />} />
               <Route path="/pro-team" element={<ProTeam />} />
               <Route path="/scouting" element={<Scouting />} />
               <Route path="/offers" element={<Offers />} />

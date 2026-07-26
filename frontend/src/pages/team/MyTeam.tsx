@@ -8,19 +8,13 @@ export default function MyTeam() {
   const { isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [team, setTeam] = useState<any>(null);
   const [roster, setRoster] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [renegotiatePlayer, setRenegotiatePlayer] = useState<any>(null);
-  const [offerSalary, setOfferSalary] = useState<number>(0);
-  const [offerDuration, setOfferDuration] = useState<number>(6);
-  const [offerBuyout, setOfferBuyout] = useState<number | ''>('');
-  const [isOffering, setIsOffering] = useState(false);
-  
   const [name, setName] = useState('');
   const [country, setCountry] = useState('US');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -28,12 +22,12 @@ export default function MyTeam() {
 
   const getRemainingContractTime = (contract: any) => {
     let endDate = contract.end_date ? new Date(contract.end_date) : null;
-    
+
     if (!endDate && contract.start_date) {
         endDate = new Date(contract.start_date);
         endDate.setMonth(endDate.getMonth() + contract.duration_months);
     }
-    
+
     if (!endDate) {
         return `${contract.duration_months} meses`;
     }
@@ -42,11 +36,11 @@ export default function MyTeam() {
     let months = (endDate.getFullYear() - now.getFullYear()) * 12;
     months -= now.getMonth();
     months += endDate.getMonth();
-    
+
     if (months < 0) months = 0;
-    
+
     const formattedDate = endDate.toLocaleDateString('es-ES', { month: '2-digit', year: 'numeric' });
-    
+
     return `${months} meses (${formattedDate})`;
   };
 
@@ -92,7 +86,7 @@ export default function MyTeam() {
       formData.append('name', name);
       formData.append('country', country);
       if (selectedFile) formData.append('logo', selectedFile);
-      
+
       const res = await api.post('/teams/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -115,7 +109,7 @@ export default function MyTeam() {
       if (name !== team.name) formData.append('name', name);
       if (country !== team.country) formData.append('country', country);
       if (selectedFile) formData.append('logo', selectedFile);
-      
+
       const res = await api.put('/teams/mine', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -134,25 +128,6 @@ export default function MyTeam() {
     }
   };
 
-  const handleRenegotiate = async () => {
-    if (!renegotiatePlayer) return;
-    setIsOffering(true);
-    try {
-      await api.post('/market/offer/contract', {
-        salary: offerSalary,
-        duration_months: offerDuration,
-        buyout_clause: offerBuyout === '' ? null : offerBuyout,
-        pro_id: renegotiatePlayer.pro.id
-      });
-      alert('Oferta de renovación enviada al jugador');
-      setRenegotiatePlayer(null);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Error al enviar oferta');
-    } finally {
-      setIsOffering(false);
-    }
-  };
-
   if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
 
   if (isCreating || isEditing) {
@@ -168,7 +143,7 @@ export default function MyTeam() {
               {isEditing ? 'Actualiza la información de tu equipo.' : 'Fundarás tu equipo desde cero.'}
             </p>
           </div>
-          
+
           <form onSubmit={isEditing ? handleEdit : handleCreate} className="space-y-6">
             <div className="flex justify-center mb-6">
               <div 
@@ -198,7 +173,7 @@ export default function MyTeam() {
                 placeholder="e.g. Natus Vincere"
               />
             </div>
-            
+
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">País</label>
               <select
@@ -266,17 +241,6 @@ export default function MyTeam() {
           </div>
         </div>
       </div>
-      <button 
-        onClick={() => {
-          setRenegotiatePlayer(c);
-          setOfferSalary(c.salary);
-          setOfferDuration(c.duration_months);
-          setOfferBuyout(c.buyout_clause || '');
-        }}
-        className="px-4 py-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded font-bold text-sm uppercase transition-colors"
-      >
-        Renegociar
-      </button>
     </div>
   );
 
@@ -308,7 +272,12 @@ export default function MyTeam() {
           </div>
         </div>
         <div className="p-8">
-          <h2 className="text-xl font-bold text-white mb-4 border-l-4 border-hltv-accent pl-3">Roster Actual</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white border-l-4 border-hltv-accent pl-3">Roster Actual</h2>
+            <button onClick={() => navigate('/team/manage-players')} className="px-4 py-2 bg-hltv-accent hover:bg-hltv-accentHover text-white rounded font-bold text-sm uppercase transition-colors">
+              Gestionar Jugadores
+            </button>
+          </div>
           {rosterPlayers.length === 0 ? (
             <div className="bg-[#121519] border border-gray-800 rounded-xl p-8 text-center">
               <p className="text-gray-500 font-medium">Aún no hay jugadores contratados en la alineación.</p>
@@ -334,7 +303,6 @@ export default function MyTeam() {
           )}
         </div>
 
-        {/* Upcoming Matches Placeholder */}
         <div className="p-8 border-t border-gray-800">
           <div className="flex items-center gap-3 mb-4">
             <h2 className="text-xl font-bold text-white border-l-4 border-hltv-accent pl-3">Próximos Partidos</h2>
@@ -346,74 +314,6 @@ export default function MyTeam() {
           </div>
         </div>
       </div>
-
-      {renegotiatePlayer && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1c2026] border border-gray-800 rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-6 bg-gradient-to-r from-gray-900 to-[#121519] border-b border-gray-800 flex justify-between items-center">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Renegociar Contrato</h2>
-              <button onClick={() => setRenegotiatePlayer(null)} className="text-gray-500 hover:text-white transition-colors">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <p className="text-gray-400 text-sm">
-                Envía una nueva oferta a <span className="text-white font-bold">{renegotiatePlayer.pro?.nickname}</span>. Si el jugador la acepta, reemplazará su contrato actual.
-              </p>
-              
-              <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase mb-2">Nuevo Salario Mensual (USD)</label>
-                <input 
-                  type="number" 
-                  value={offerSalary} 
-                  onChange={e => setOfferSalary(Number(e.target.value))}
-                  className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
-                  min="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase mb-2">Nueva Duración (Meses)</label>
-                <input 
-                  type="number" 
-                  value={offerDuration} 
-                  onChange={e => setOfferDuration(Number(e.target.value))}
-                  className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
-                  min="1"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase mb-2">Nueva Cláusula (USD) - Opcional</label>
-                <input 
-                  type="number" 
-                  value={offerBuyout} 
-                  onChange={e => setOfferBuyout(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
-                  min="0"
-                />
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-800 flex gap-3">
-              <button 
-                onClick={() => setRenegotiatePlayer(null)}
-                className="flex-1 py-3 font-bold text-gray-400 uppercase tracking-wider hover:text-white transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleRenegotiate}
-                disabled={isOffering}
-                className="flex-1 py-3 bg-hltv-accent hover:bg-hltv-accentHover text-white font-bold uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50"
-              >
-                {isOffering ? 'Enviando...' : 'Enviar Oferta'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

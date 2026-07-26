@@ -32,7 +32,7 @@ async def get_current_user(
             raise credentials_exception
     except InvalidTokenError:
         raise credentials_exception
-        
+
     result = await db.execute(
         select(User)
         .where(User.email == email)
@@ -59,7 +59,7 @@ async def get_current_user_optional(
             return None
     except InvalidTokenError:
         return None
-        
+
     result = await db.execute(
         select(User)
         .where(User.email == email)

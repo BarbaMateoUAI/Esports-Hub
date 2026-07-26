@@ -9,7 +9,7 @@ export default function Login() {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -26,10 +26,10 @@ export default function Login() {
       const response = await api.post('/users/login', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       const { access_token, role } = response.data;
       login(access_token, role);
-      
+
       if (role === 'Administrator') {
         navigate('/admin');
       } else {
@@ -44,12 +44,12 @@ export default function Login() {
 
   return (
     <div className="min-h-[calc(100vh-56px)] bg-hltv-bg flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Elementos decorativos */}
+
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-hltv-accent/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-md w-full bg-[#1c2026]/90 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] p-8 border border-gray-800 relative z-10">
-        
+
         <div className="flex justify-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-hltv-accent to-orange-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-6 transition-transform duration-300">
             <KeyRound className="text-white w-8 h-8" />

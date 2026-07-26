@@ -29,7 +29,6 @@ class Permission(Base):
     name: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     description: Mapped[Optional[str]] = mapped_column(String(255))
 
-
 class Role(Base):
     __tablename__ = "roles"
 
@@ -39,7 +38,6 @@ class Role(Base):
 
     permissions: Mapped[List[Permission]] = relationship(secondary=role_permission)
     users: Mapped[List["User"]] = relationship(back_populates="role")
-
 
 class User(Base):
     __tablename__ = "users"
@@ -51,7 +49,7 @@ class User(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, server_default='false')
 
     role: Mapped[Optional["Role"]] = relationship(back_populates="users")
-    
+
     person: Mapped[Optional["Person"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
@@ -68,17 +66,16 @@ class User(Base):
             return self.person
         return None
 
-
 class Person(Base):
     __tablename__ = "persons"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
-    
+
     full_name: Mapped[str] = mapped_column(String(100))
     photo_url: Mapped[Optional[str]] = mapped_column(String(255))
     country: Mapped[Optional[str]] = mapped_column(String(3))
-    
+
     type: Mapped[str] = mapped_column(String(50))
 
     __mapper_args__ = {
@@ -89,15 +86,14 @@ class Person(Base):
 
     user: Mapped["User"] = relationship(back_populates="person")
 
-
 class ProProfile(Person):
     __tablename__ = "pro_profiles"
 
     id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="CASCADE"), primary_key=True)
-    
+
     nickname: Mapped[str] = mapped_column(String(50), index=True)
     birth_date: Mapped[datetime.date] = mapped_column(Date)
-    
+
     roles_in_game: Mapped[List[CS2Role]] = mapped_column(
         ARRAY(Enum(CS2Role, name="cs2role_enum", native_enum=True)),
         default=list
@@ -106,7 +102,6 @@ class ProProfile(Person):
     __mapper_args__ = {
         "polymorphic_identity": "pro_profile",
     }
-
 
 class OwnerProfile(Person):
     __tablename__ = "owner_profiles"
