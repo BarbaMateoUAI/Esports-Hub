@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { Camera, Shield, Trophy, X } from 'lucide-react';
+import { Camera, Shield, Trophy, X, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MyTeam() {
@@ -242,6 +242,44 @@ export default function MyTeam() {
     );
   }
 
+  const isCoachingStaff = (c: any) => c.pro?.roles_in_game?.some((r: string) => ['Coach', 'Analyst'].includes(r));
+  const rosterPlayers = roster.filter(c => !isCoachingStaff(c));
+  const coachingStaff = roster.filter(isCoachingStaff);
+
+  const renderRosterMember = (c: any) => (
+    <div key={c.id} className="bg-[#121519] border border-gray-800 rounded-xl p-6 flex justify-between items-center shadow-md">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded bg-[#0d1015] border border-gray-700 overflow-hidden">
+          {c.pro?.photo_url ? (
+            <img src={c.pro.photo_url} alt={c.pro.nickname} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs font-bold">PRO</div>
+          )}
+        </div>
+        <div>
+          <div className="text-white font-bold text-lg">{c.pro?.nickname}</div>
+          <div className="text-gray-400 text-xs">{c.pro?.full_name}</div>
+          <div className="flex gap-3 mt-1 items-center">
+            <span className="text-hltv-accent font-bold text-xs">Salario: ${c.salary}</span>
+            {c.buyout_clause && <span className="text-blue-400 font-bold text-xs">Cláusula: ${c.buyout_clause}</span>}
+            <span className="text-gray-400 font-bold text-xs bg-gray-800 px-2 py-0.5 rounded">Contrato: {getRemainingContractTime(c)}</span>
+          </div>
+        </div>
+      </div>
+      <button 
+        onClick={() => {
+          setRenegotiatePlayer(c);
+          setOfferSalary(c.salary);
+          setOfferDuration(c.duration_months);
+          setOfferBuyout(c.buyout_clause || '');
+        }}
+        className="px-4 py-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded font-bold text-sm uppercase transition-colors"
+      >
+        Renegociar
+      </button>
+    </div>
+  );
+
   return (
     <div className="max-w-5xl mx-auto p-4 py-8">
       <div className="bg-[#1c2026] border border-gray-800 rounded-xl overflow-hidden shadow-lg mb-8">
@@ -271,7 +309,7 @@ export default function MyTeam() {
         </div>
         <div className="p-8">
           <h2 className="text-xl font-bold text-white mb-4 border-l-4 border-hltv-accent pl-3">Roster Actual</h2>
-          {roster.length === 0 ? (
+          {rosterPlayers.length === 0 ? (
             <div className="bg-[#121519] border border-gray-800 rounded-xl p-8 text-center">
               <p className="text-gray-500 font-medium">Aún no hay jugadores contratados en la alineación.</p>
               <button onClick={() => navigate('/scouting')} className="mt-4 px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded font-bold text-sm transition-colors">
@@ -280,41 +318,32 @@ export default function MyTeam() {
             </div>
           ) : (
             <div className="space-y-4">
-              {roster.map((c: any) => (
-                <div key={c.id} className="bg-[#121519] border border-gray-800 rounded-xl p-6 flex justify-between items-center shadow-md">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded bg-[#0d1015] border border-gray-700 overflow-hidden">
-                      {c.pro?.photo_url ? (
-                        <img src={c.pro.photo_url} alt={c.pro.nickname} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs font-bold">PRO</div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-white font-bold text-lg">{c.pro?.nickname}</div>
-                      <div className="text-gray-400 text-xs">{c.pro?.full_name}</div>
-                      <div className="flex gap-3 mt-1 items-center">
-                        <span className="text-hltv-accent font-bold text-xs">Salario: ${c.salary}</span>
-                        {c.buyout_clause && <span className="text-blue-400 font-bold text-xs">Cláusula: ${c.buyout_clause}</span>}
-                        <span className="text-gray-400 font-bold text-xs bg-gray-800 px-2 py-0.5 rounded">Contrato: {getRemainingContractTime(c)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setRenegotiatePlayer(c);
-                      setOfferSalary(c.salary);
-                      setOfferDuration(c.duration_months);
-                      setOfferBuyout(c.buyout_clause || '');
-                    }}
-                    className="px-4 py-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded font-bold text-sm uppercase transition-colors"
-                  >
-                    Renegociar
-                  </button>
-                </div>
-              ))}
+              {rosterPlayers.map(renderRosterMember)}
             </div>
           )}
+
+          <h2 className="text-xl font-bold text-white mt-8 mb-4 border-l-4 border-blue-500 pl-3">Cuerpo Técnico</h2>
+          {coachingStaff.length === 0 ? (
+            <div className="bg-[#121519] border border-gray-800 rounded-xl p-8 text-center">
+              <p className="text-gray-500 font-medium">No hay entrenadores ni analistas en el equipo.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {coachingStaff.map(renderRosterMember)}
+            </div>
+          )}
+        </div>
+
+        {/* Upcoming Matches Placeholder */}
+        <div className="p-8 border-t border-gray-800">
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-xl font-bold text-white border-l-4 border-hltv-accent pl-3">Próximos Partidos</h2>
+          </div>
+          <div className="bg-[#121519] border border-dashed border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center text-center">
+            <Calendar className="w-12 h-12 text-gray-600 mb-3" />
+            <p className="text-gray-400 font-bold uppercase tracking-wider mb-1">En Desarrollo</p>
+            <p className="text-gray-500 text-sm">Próximamente se listarán aquí los encuentros oficiales del equipo.</p>
+          </div>
         </div>
       </div>
 

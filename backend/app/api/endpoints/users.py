@@ -75,7 +75,7 @@ async def get_my_profile(
 ):
     result = await db.execute(
         select(User)
-        .options(selectinload(User.pro_profile), selectinload(User.owner_profile))
+        .options(selectinload(User.person))
         .where(User.id == current_user.id)
     )
     user = result.scalars().first()
@@ -84,13 +84,14 @@ async def get_my_profile(
 @router.put("/me/profile", response_model=UserProfileResponse)
 async def update_my_profile(
     nickname: str = Form(None),
+    roles: str = Form(None),
     photo: UploadFile = File(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
         select(User)
-        .options(selectinload(User.pro_profile), selectinload(User.owner_profile))
+        .options(selectinload(User.person))
         .where(User.id == current_user.id)
     )
     user = result.scalars().first()
@@ -116,6 +117,17 @@ async def update_my_profile(
             user.pro_profile.nickname = nickname
         if photo_url:
             user.pro_profile.photo_url = photo_url
+        if roles is not None:
+            # parse roles string into CS2Role enums
+            role_values = [r.strip() for r in roles.split(',') if r.strip()]
+            valid_roles = []
+            for rv in role_values:
+                try:
+                    from app.models.users import CS2Role
+                    valid_roles.append(CS2Role(rv))
+                except ValueError:
+                    pass
+            user.pro_profile.roles_in_game = valid_roles
             
     elif user.owner_profile:
         if photo_url:
@@ -125,7 +137,7 @@ async def update_my_profile(
     
     result = await db.execute(
         select(User)
-        .options(selectinload(User.pro_profile), selectinload(User.owner_profile))
+        .options(selectinload(User.person))
         .where(User.id == current_user.id)
     )
     return result.scalars().first()

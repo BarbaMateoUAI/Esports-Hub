@@ -78,6 +78,10 @@ class TransferOffer(Base):
     
     amount: Mapped[float] = mapped_column(Numeric(12, 2))
     
+    proposed_salary: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    proposed_duration_months: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    proposed_buyout_clause: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    
     status: Mapped[TransferOfferState] = mapped_column(
         Enum(TransferOfferState, name="transfer_offer_state_enum", native_enum=True),
         default=TransferOfferState.PENDING

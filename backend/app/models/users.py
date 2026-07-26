@@ -12,6 +12,8 @@ class CS2Role(enum.Enum):
     SUPPORT = "Support"
     LURKER = "Lurker"
     IGL = "IGL"
+    COACH = "Coach"
+    ANALYST = "Analyst"
 
 role_permission = Table(
     "role_permission",
@@ -82,6 +84,7 @@ class Person(Base):
     __mapper_args__ = {
         "polymorphic_identity": "person",
         "polymorphic_on": "type",
+        "with_polymorphic": "*",
     }
 
     user: Mapped["User"] = relationship(back_populates="person")

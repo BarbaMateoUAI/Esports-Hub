@@ -24,6 +24,7 @@ export default function Scouting() {
 
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
   const [offerAmount, setOfferAmount] = useState<number>(0);
+  const [proposedSalary, setProposedSalary] = useState<number>(0);
   const [durationMonths, setDurationMonths] = useState<number>(6);
   const [buyoutClause, setBuyoutClause] = useState<number | ''>('');
   const [isOffering, setIsOffering] = useState(false);
@@ -83,7 +84,10 @@ export default function Scouting() {
         await api.post('/market/offer/transfer', {
           amount: offerAmount,
           pro_id: selectedPlayer.pro.id,
-          to_team_id: selectedPlayer.team.id
+          to_team_id: selectedPlayer.team.id,
+          proposed_salary: proposedSalary,
+          proposed_duration_months: durationMonths,
+          proposed_buyout_clause: buyoutClause === '' ? null : buyoutClause
         });
         alert('Oferta de traspaso enviada al equipo dueño');
       } else {
@@ -285,34 +289,44 @@ export default function Scouting() {
                 />
               </div>
 
-              {!selectedPlayer.team && (
-                <>
-                  <div>
-                    <label className="block text-gray-400 text-xs font-bold uppercase mb-2">
-                      Duración del Contrato (Meses)
-                    </label>
-                    <input
-                      type="number"
-                      value={durationMonths}
-                      onChange={e => setDurationMonths(Number(e.target.value))}
-                      className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
-                      min="1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-400 text-xs font-bold uppercase mb-2">
-                      Cláusula de Rescisión (USD) - Opcional
-                    </label>
-                    <input
-                      type="number"
-                      value={buyoutClause}
-                      onChange={e => setBuyoutClause(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
-                      min="0"
-                    />
-                  </div>
-                </>
+              {selectedPlayer.team && (
+                <div>
+                  <label className="block text-gray-400 text-xs font-bold uppercase mb-2">
+                    Salario Mensual Propuesto (USD)
+                  </label>
+                  <input
+                    type="number"
+                    value={proposedSalary}
+                    onChange={e => setProposedSalary(Number(e.target.value))}
+                    className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
+                    min="0"
+                  />
+                </div>
               )}
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase mb-2">
+                  Duración del Contrato (Meses)
+                </label>
+                <input
+                  type="number"
+                  value={durationMonths}
+                  onChange={e => setDurationMonths(Number(e.target.value))}
+                  className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase mb-2">
+                  Cláusula de Rescisión (USD) - Opcional
+                </label>
+                <input
+                  type="number"
+                  value={buyoutClause}
+                  onChange={e => setBuyoutClause(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full bg-[#121519] border border-gray-700 rounded p-3 text-white focus:border-hltv-accent focus:outline-none"
+                  min="0"
+                />
+              </div>
             </div>
 
             <div className="flex gap-3">

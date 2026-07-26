@@ -18,12 +18,22 @@ class PendingTransferState(BaseTransferState):
             self.raise_invalid_transition(new_status.value)
             
     def _create_contract(self):
+        # If proposed_salary is None, it's an old offer created before the migration
+        if self.offer.proposed_salary is None:
+            salary = float(self.offer.amount) * 0.10
+            duration = 6
+            clause = float(self.offer.amount) * 2
+        else:
+            salary = float(self.offer.proposed_salary)
+            duration = self.offer.proposed_duration_months
+            clause = float(self.offer.proposed_buyout_clause) if self.offer.proposed_buyout_clause is not None else None
+
         new_contract = Contract(
             team_id=self.offer.from_team_id,
             pro_id=self.offer.pro_id,
-            salary=float(self.offer.amount) * 0.10,
-            duration_months=6,
-            buyout_clause=float(self.offer.amount) * 2,
+            salary=salary,
+            duration_months=duration,
+            buyout_clause=clause,
             status=ContractState.PENDING,
             transfer_offer_id=self.offer.id
         )
@@ -46,12 +56,22 @@ class NegotiatingTransferState(BaseTransferState):
             self.raise_invalid_transition(new_status.value)
 
     def _create_contract(self):
+        # If proposed_salary is None, it's an old offer created before the migration
+        if self.offer.proposed_salary is None:
+            salary = float(self.offer.amount) * 0.10
+            duration = 6
+            clause = float(self.offer.amount) * 2
+        else:
+            salary = float(self.offer.proposed_salary)
+            duration = self.offer.proposed_duration_months
+            clause = float(self.offer.proposed_buyout_clause) if self.offer.proposed_buyout_clause is not None else None
+
         new_contract = Contract(
             team_id=self.offer.from_team_id,
             pro_id=self.offer.pro_id,
-            salary=float(self.offer.amount) * 0.10,
-            duration_months=6,
-            buyout_clause=float(self.offer.amount) * 2,
+            salary=salary,
+            duration_months=duration,
+            buyout_clause=clause,
             status=ContractState.PENDING,
             transfer_offer_id=self.offer.id
         )

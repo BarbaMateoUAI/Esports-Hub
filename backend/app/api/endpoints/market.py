@@ -6,7 +6,7 @@ from sqlalchemy import or_, and_
 from typing import List, Optional
 from pydantic import BaseModel
 
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, get_current_user_optional
 from app.models.users import User, ProProfile
 from app.models.esports import Team, Contract, ContractState, TransferOffer, TransferOfferState
 from app.schemas.esports import TeamResponse, ContractOffer, TransferOfferCreate, ContractResponse, TransferOfferResponse
@@ -32,8 +32,17 @@ async def get_market_players(
     min_age: Optional[int] = None,
     max_age: Optional[int] = None,
     team_name: Optional[str] = None,
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
+    # Get current user's team if they are an owner
+    my_team_id = None
+    if current_user and current_user.owner_profile:
+        my_team_result = await db.execute(select(Team).where(Team.owner_id == current_user.owner_profile.id))
+        my_team = my_team_result.scalars().first()
+        if my_team:
+            my_team_id = my_team.id
+
     query = select(ProProfile).options(
         selectinload(ProProfile.user)
     )
@@ -80,6 +89,10 @@ async def get_market_players(
             continue
             
         team_data = active_contract.team if active_contract else None
+        
+        # Filter out my own team's players
+        if my_team_id and team_data and team_data.id == my_team_id:
+            continue
         
         # Team name filter
         if team_name and team_name.strip():
@@ -140,6 +153,9 @@ async def offer_transfer(
         to_team_id=offer.to_team_id,
         pro_id=offer.pro_id,
         amount=offer.amount,
+        proposed_salary=offer.proposed_salary,
+        proposed_duration_months=offer.proposed_duration_months,
+        proposed_buyout_clause=offer.proposed_buyout_clause,
         status=TransferOfferState.PENDING
     )
     db.add(new_offer)

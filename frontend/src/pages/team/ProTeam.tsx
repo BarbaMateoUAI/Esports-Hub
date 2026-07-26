@@ -62,6 +62,26 @@ export default function ProTeam() {
     );
   }
 
+  const isCoachingStaff = (c: any) => c.pro?.roles_in_game?.some((r: string) => ['Coach', 'Analyst'].includes(r));
+  const rosterPlayers = roster.filter(c => !isCoachingStaff(c));
+  const coachingStaff = roster.filter(isCoachingStaff);
+
+  const renderRosterMember = (c: any) => (
+    <div key={c.id} className="bg-[#121519] border border-gray-800 rounded-xl p-4 flex items-center gap-4 shadow-md">
+      <div className="w-12 h-12 rounded bg-[#0d1015] border border-gray-700 overflow-hidden flex-shrink-0">
+        {c.pro.photo_url ? (
+          <img src={c.pro.photo_url} alt={c.pro.nickname} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs font-bold">PRO</div>
+        )}
+      </div>
+      <div className="overflow-hidden">
+        <div className="text-white font-bold text-lg truncate">{c.pro.nickname}</div>
+        <div className="text-gray-400 text-xs truncate">{c.pro.full_name}</div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-5xl mx-auto p-4 py-8">
       {/* Team Header */}
@@ -88,25 +108,20 @@ export default function ProTeam() {
         {/* Roster Section */}
         <div className="p-8 border-b border-gray-800">
           <h2 className="text-xl font-bold text-white mb-4 border-l-4 border-hltv-accent pl-3">Alineación (Roster)</h2>
-          {roster.length === 0 ? (
+          {rosterPlayers.length === 0 ? (
             <p className="text-gray-500">Cargando compañeros...</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roster.map((c: any) => (
-                <div key={c.id} className="bg-[#121519] border border-gray-800 rounded-xl p-4 flex items-center gap-4 shadow-md">
-                  <div className="w-12 h-12 rounded bg-[#0d1015] border border-gray-700 overflow-hidden flex-shrink-0">
-                    {c.pro.photo_url ? (
-                      <img src={c.pro.photo_url} alt={c.pro.nickname} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs font-bold">PRO</div>
-                    )}
-                  </div>
-                  <div className="overflow-hidden">
-                    <div className="text-white font-bold text-lg truncate">{c.pro.nickname}</div>
-                    <div className="text-gray-400 text-xs truncate">{c.pro.full_name}</div>
-                  </div>
-                </div>
-              ))}
+              {rosterPlayers.map(renderRosterMember)}
+            </div>
+          )}
+
+          <h2 className="text-xl font-bold text-white mt-8 mb-4 border-l-4 border-blue-500 pl-3">Cuerpo Técnico</h2>
+          {coachingStaff.length === 0 ? (
+            <p className="text-gray-500">No hay entrenadores ni analistas en el equipo.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {coachingStaff.map(renderRosterMember)}
             </div>
           )}
         </div>

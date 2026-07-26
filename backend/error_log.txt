@@ -1,16 +1,14 @@
-500 Error: 4 validation errors for MarketPlayerResponse
-pro.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
-team.owner.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
-contract.team.owner.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
-contract.pro.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
+500 Error: expected ORM mapped attribute for loader strategy argument
+Traceback (most recent call last):
+  File "C:\esports\backend\venv\Lib\site-packages\sqlalchemy\orm\strategy_options.py", line 2376, in _parse_attr_argument
+    insp: InspectionAttr = inspect(attr)  # type: ignore
+                           ^^^^^^^^^^^^^
+  File "C:\esports\backend\venv\Lib\site-packages\sqlalchemy\inspection.py", line 148, in inspect
+    raise exc.NoInspectionAvailable(
+sqlalchemy.exc.NoInspectionAvailable: No inspection system is available for object of type <class 'property'>
+
+The above exception was the direct cause of the following exception:
+
 Traceback (most recent call last):
   File "C:\esports\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
     await self.app(scope, receive, _send)
@@ -47,28 +45,21 @@ Traceback (most recent call last):
   File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 136, in app
     response = await f(request)
                ^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 690, in app
-    raw_response = await run_endpoint_function(
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 344, in run_endpoint_function
-    return await dependant.call(**values)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\app\api\endpoints\market.py", line 89, in get_market_players
-    response_list.append(MarketPlayerResponse(pro=pro, team=team_data, contract=active_contract))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\esports\backend\venv\Lib\site-packages\pydantic\main.py", line 263, in __init__
-    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-pydantic_core._pydantic_core.ValidationError: 4 validation errors for MarketPlayerResponse
-pro.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
-team.owner.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
-contract.team.owner.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
-contract.pro.country
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.13/v/string_type
+  File "C:\esports\backend\venv\Lib\site-packages\fastapi\routing.py", line 473, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\esports\backend\venv\Lib\site-packages\fastapi\dependencies\utils.py", line 678, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\esports\backend\app\api\deps.py", line 69, in get_current_user_optional
+    selectinload(User.owner_profile),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\esports\backend\venv\Lib\site-packages\sqlalchemy\orm\strategy_options.py", line 2465, in selectinload
+    return _generate_from_keys(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\esports\backend\venv\Lib\site-packages\sqlalchemy\orm\strategy_options.py", line 2344, in _generate_from_keys
+    _, lead_entity, _ = _parse_attr_argument(attr)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\esports\backend\venv\Lib\site-packages\sqlalchemy\orm\strategy_options.py", line 2378, in _parse_attr_argument
+    raise sa_exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: expected ORM mapped attribute for loader strategy argument

@@ -70,7 +70,7 @@ const NavBar = () => {
                 <NavLink to="/offers">Ofertas</NavLink>
               )}
               
-              {role === 'Admin' && (
+              {role && !['ProPlayer', 'TeamOwner', 'Unknown'].includes(role) && (
                 <NavLink to="/admin">Panel Admin</NavLink>
               )}
             </div>

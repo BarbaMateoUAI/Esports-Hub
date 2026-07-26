@@ -51,6 +51,9 @@ class TransferOfferBase(BaseModel):
     amount: float
     pro_id: int
     to_team_id: int
+    proposed_salary: float
+    proposed_duration_months: int
+    proposed_buyout_clause: Optional[float] = None
 
 class TransferOfferCreate(TransferOfferBase):
     pass

@@ -9,7 +9,8 @@ export default function AdminDashboard() {
   const { role, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  if (!isAuthenticated || role !== 'Admin') {
+  const isAdminRole = role && !['ProPlayer', 'TeamOwner', 'Unknown'].includes(role);
+  if (!isAuthenticated || !isAdminRole) {
     return <Navigate to="/" replace />;
   }
 
