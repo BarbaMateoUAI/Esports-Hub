@@ -30,7 +30,8 @@ class PendingContractState(BaseContractState):
             c.status = ContractState.FINISHED
             
         self.contract.start_date = datetime.datetime.utcnow()
-        self.contract.end_date = self.contract.start_date + relativedelta(months=self.contract.duration_months)
+        if not self.contract.is_renegotiation:
+            self.contract.end_date = self.contract.start_date + relativedelta(months=self.contract.duration_months)
         self.contract.status = ContractState.ACTIVE
 
     async def _handle_rejection(self):
@@ -46,8 +47,9 @@ class PendingContractState(BaseContractState):
     def _apply_counter_offer(self, salary=None, duration_months=None, buyout_clause=None, **kwargs):
         if salary is not None:
             self.contract.salary = salary
-        if duration_months is not None:
+        if duration_months is not None and duration_months != self.contract.duration_months:
             self.contract.duration_months = duration_months
+            self.contract.is_renegotiation = False
         if buyout_clause is not None:
             self.contract.buyout_clause = buyout_clause
         self.contract.status = ContractState.COUNTER_OFFER
@@ -77,7 +79,8 @@ class CounterOfferContractState(BaseContractState):
             c.status = ContractState.FINISHED
             
         self.contract.start_date = datetime.datetime.utcnow()
-        self.contract.end_date = self.contract.start_date + relativedelta(months=self.contract.duration_months)
+        if not self.contract.is_renegotiation:
+            self.contract.end_date = self.contract.start_date + relativedelta(months=self.contract.duration_months)
         self.contract.status = ContractState.ACTIVE
 
     async def _handle_rejection(self):
@@ -93,8 +96,9 @@ class CounterOfferContractState(BaseContractState):
     def _apply_counter_offer(self, salary=None, duration_months=None, buyout_clause=None, **kwargs):
         if salary is not None:
             self.contract.salary = salary
-        if duration_months is not None:
+        if duration_months is not None and duration_months != self.contract.duration_months:
             self.contract.duration_months = duration_months
+            self.contract.is_renegotiation = False
         if buyout_clause is not None:
             self.contract.buyout_clause = buyout_clause
         self.contract.status = ContractState.COUNTER_OFFER

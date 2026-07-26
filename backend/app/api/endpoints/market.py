@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.api.deps import get_db, get_current_user, get_current_user_optional
 from app.models.users import User, ProProfile
 from app.models.esports import Team, Contract, ContractState, TransferOffer, TransferOfferState
-from app.schemas.esports import TeamResponse, ContractOffer, TransferOfferCreate, ContractResponse, TransferOfferResponse
+from app.schemas.esports import TeamResponse, ContractOffer, TransferOfferCreate, ContractResponse, TransferOfferResponse, ContractRenegotiateRequest
 from app.schemas.user import ProProfileResponse
 
 router = APIRouter()
@@ -102,6 +102,40 @@ async def get_market_players(
         response_list.append(MarketPlayerResponse(pro=pro, team=team_data, contract=active_contract))
         
     return response_list
+
+@router.post("/offer/renegotiate")
+async def offer_renegotiate(
+    req: ContractRenegotiateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if not current_user.pro_profile:
+        raise HTTPException(status_code=403, detail="Only pro players can initiate renegotiation")
+        
+    # Get the active contract for the pro
+    active_contract_result = await db.execute(
+        select(Contract)
+        .where(Contract.pro_id == current_user.pro_profile.id, Contract.status == ContractState.ACTIVE)
+    )
+    active_contract = active_contract_result.scalars().first()
+    
+    if not active_contract:
+        raise HTTPException(status_code=400, detail="You don't have an active contract to renegotiate")
+
+    new_contract = Contract(
+        team_id=active_contract.team_id,
+        pro_id=current_user.pro_profile.id,
+        salary=req.salary,
+        duration_months=active_contract.duration_months,
+        buyout_clause=active_contract.buyout_clause,
+        start_date=active_contract.start_date,
+        end_date=active_contract.end_date,
+        status=ContractState.PENDING,
+        is_renegotiation=True
+    )
+    db.add(new_contract)
+    await db.commit()
+    return {"message": "Renegotiation offer sent to team owner."}
 
 @router.post("/offer/contract")
 async def offer_contract(

@@ -10,6 +10,8 @@ export default function Offers() {
 
   const [showCounter, setShowCounter] = useState<number | string | null>(null);
   const [counterAmount, setCounterAmount] = useState<number>(0);
+  const [counterDuration, setCounterDuration] = useState<number>(0);
+  const [counterBuyout, setCounterBuyout] = useState<string>('');
 
   useEffect(() => {
     fetchOffers();
@@ -45,14 +47,14 @@ export default function Offers() {
     }
   };
 
-  const handleContract = async (id: number, status: string, salary?: number) => {
+  const handleContract = async (id: number, status: string, salary?: number, duration?: number, buyout?: string) => {
     try {
       let url = `/market/offer/contract/${id}?status=${status}`;
       
       const formData = new FormData();
-      if (salary !== undefined) {
-        formData.append('salary', salary.toString());
-      }
+      if (salary !== undefined) formData.append('salary', salary.toString());
+      if (duration !== undefined) formData.append('duration_months', duration.toString());
+      if (buyout !== undefined && buyout !== '') formData.append('buyout_clause', buyout);
       
       await api.put(url, formData);
       fetchOffers();
@@ -66,6 +68,9 @@ export default function Offers() {
 
   const isOwner = role === 'TeamOwner';
   const isPro = role === 'ProPlayer';
+
+  const newContracts = data.contracts.filter(c => !c.is_renegotiation);
+  const teamRenegotiations = data.contracts.filter(c => c.is_renegotiation);
 
   return (
     <div className="max-w-4xl mx-auto p-4 py-8">
@@ -139,12 +144,12 @@ export default function Offers() {
       )}
 
       <div>
-        <h2 className="text-xl font-bold text-white mb-4 border-l-4 border-hltv-accent pl-3">Contratos de Jugador</h2>
-        {data.contracts.length === 0 ? (
+        <h2 className="text-xl font-bold text-white mb-4 border-l-4 border-hltv-accent pl-3">Contratos (Nuevos)</h2>
+        {newContracts.length === 0 ? (
           <p className="text-gray-500 bg-[#1c2026] p-6 rounded-xl border border-gray-800">No hay contratos pendientes.</p>
         ) : (
-          <div className="space-y-4">
-            {data.contracts.map((c: any) => (
+          <div className="space-y-4 mb-12">
+            {newContracts.map((c: any) => (
               <div key={c.id} className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 shadow-md">
                 <div className="flex justify-between items-start">
                   <div>
@@ -168,7 +173,7 @@ export default function Offers() {
                     </div>
                   </div>
                   
-                  {isPro && (c.status === 'PENDING' || c.status === 'COUNTER_OFFER') && (
+                  {isPro && c.status === 'PENDING' && (
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-2">
                         <button onClick={() => handleContract(c.id, 'ACTIVE')} className="p-2 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded transition-colors" title="Aceptar Contrato">
@@ -184,10 +189,18 @@ export default function Offers() {
                     </div>
                   )}
 
+                  {isPro && c.status === 'COUNTER_OFFER' && (
+                     <div className="text-orange-500 text-sm font-bold mt-2">Esperando respuesta del equipo...</div>
+                  )}
+
+                  {isOwner && c.status === 'PENDING' && (
+                     <div className="text-yellow-500 text-sm font-bold mt-2">Esperando respuesta del jugador...</div>
+                  )}
+
                   {isOwner && c.status === 'COUNTER_OFFER' && (
                     <div className="flex gap-2">
-                        <button onClick={() => handleContract(c.id, 'PENDING')} className="px-3 py-1 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded text-sm font-bold transition-colors">
-                          Aceptar Contraoferta (Re-emitir)
+                        <button onClick={() => handleContract(c.id, 'ACTIVE')} className="px-3 py-1 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded text-sm font-bold transition-colors">
+                          Aceptar Contraoferta
                         </button>
                         <button onClick={() => handleContract(c.id, 'REJECTED')} className="px-3 py-1 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded text-sm font-bold transition-colors">
                           Rechazar
@@ -213,6 +226,160 @@ export default function Offers() {
               </div>
             ))}
           </div>
+        )}
+
+        {isOwner && (
+          <>
+            <h2 className="text-xl font-bold text-white mb-4 border-l-4 border-hltv-accent pl-3">Equipo (Renegociaciones)</h2>
+            {teamRenegotiations.length === 0 ? (
+              <p className="text-gray-500 bg-[#1c2026] p-6 rounded-xl border border-gray-800">No hay peticiones de renegociación de tus jugadores.</p>
+            ) : (
+              <div className="space-y-4">
+                {teamRenegotiations.map((c: any) => (
+                  <div key={c.id} className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 shadow-md border-l-4 border-l-blue-500">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            c.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
+                            c.status === 'COUNTER_OFFER' ? 'bg-orange-500/20 text-orange-400' :
+                            c.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {c.status}
+                          </span>
+                          <span className="text-blue-400 text-xs font-bold uppercase">Renegociación</span>
+                        </div>
+                        <div className="text-white text-lg">
+                          Jugador <span className="font-bold">{c.pro?.nickname}</span> solicita un nuevo salario
+                        </div>
+                        <div className="flex gap-4 mt-2">
+                          <div className="text-hltv-accent font-black">Salario Pretendido: ${c.salary}</div>
+                          <div className="text-gray-400 font-bold">Duración actual: {c.duration_months} meses</div>
+                        </div>
+                      </div>
+                      
+                      {c.status === 'PENDING' && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            <button onClick={() => handleContract(c.id, 'ACTIVE')} className="p-2 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded transition-colors" title="Aceptar Renegociación">
+                              <Check className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => handleContract(c.id, 'REJECTED')} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors" title="Rechazar">
+                              <X className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => { 
+                              setShowCounter(`renegotiate-${c.id}`); 
+                              setCounterAmount(c.salary); 
+                              setCounterDuration(c.duration_months); 
+                              setCounterBuyout(c.buyout_clause || ''); 
+                            }} className="p-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded transition-colors" title="Contraofertar">
+                              <Handshake className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {c.status === 'COUNTER_OFFER' && (
+                        <div className="text-orange-500 text-sm font-bold mt-2">Esperando respuesta del jugador...</div>
+                      )}
+                    </div>
+
+                    {showCounter === `renegotiate-${c.id}` && (
+                      <div className="mt-4 p-4 bg-[#121519] border border-gray-700 rounded-lg animate-fade-in">
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-1">Salario ($)</label>
+                            <input 
+                              type="number" 
+                              value={counterAmount} 
+                              onChange={e => setCounterAmount(Number(e.target.value))}
+                              className="w-full bg-[#1c2026] border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-hltv-accent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-1">Duración (Meses)</label>
+                            <input 
+                              type="number" 
+                              value={counterDuration} 
+                              onChange={e => setCounterDuration(Number(e.target.value))}
+                              className="w-full bg-[#1c2026] border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-hltv-accent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-1">Cláusula ($) Opcional</label>
+                            <input 
+                              type="number" 
+                              value={counterBuyout} 
+                              onChange={e => setCounterBuyout(e.target.value)}
+                              className="w-full bg-[#1c2026] border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-hltv-accent"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => handleContract(c.id, 'COUNTER_OFFER', counterAmount, counterDuration, counterBuyout)} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-bold transition-colors text-sm">
+                            Enviar Contraoferta
+                          </button>
+                          <button onClick={() => setShowCounter(null)} className="text-gray-400 hover:text-white text-sm">Cancelar</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {isPro && teamRenegotiations.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold text-white mb-4 border-l-4 border-hltv-accent pl-3 mt-12">Tu Renegociación</h2>
+            <div className="space-y-4">
+              {teamRenegotiations.map((c: any) => (
+                <div key={c.id} className="bg-[#1c2026] border border-gray-800 rounded-xl p-6 shadow-md border-l-4 border-l-blue-500">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          c.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
+                          c.status === 'COUNTER_OFFER' ? 'bg-orange-500/20 text-orange-400' :
+                          c.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {c.status}
+                        </span>
+                        <span className="text-blue-400 text-xs font-bold uppercase">Renegociación</span>
+                      </div>
+                      <div className="text-white text-lg">
+                        Renegociación con <span className="font-bold">{c.team?.name}</span>
+                      </div>
+                      <div className="flex gap-4 mt-2">
+                        <div className="text-hltv-accent font-black">Salario Ofrecido: ${c.salary}</div>
+                        <div className="text-gray-400 font-bold">Duración: {c.duration_months} meses</div>
+                        {c.buyout_clause && <div className="text-blue-400 font-bold">Cláusula: ${c.buyout_clause}</div>}
+                      </div>
+                    </div>
+                    
+                    {c.status === 'PENDING' && (
+                      <div className="text-yellow-500 text-sm font-bold mt-2">Esperando respuesta del equipo...</div>
+                    )}
+
+                    {c.status === 'COUNTER_OFFER' && (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          <button onClick={() => handleContract(c.id, 'ACTIVE')} className="p-2 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded transition-colors" title="Aceptar Contraoferta">
+                            <Check className="w-5 h-5" />
+                          </button>
+                          <button onClick={() => handleContract(c.id, 'REJECTED')} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors" title="Rechazar">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

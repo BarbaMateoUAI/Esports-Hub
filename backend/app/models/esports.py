@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import String, ForeignKey, Enum, Numeric, DateTime, Integer
+from sqlalchemy import String, ForeignKey, Enum, Numeric, DateTime, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 
@@ -60,6 +60,8 @@ class Contract(Base):
         Enum(ContractState, name="contract_state_enum", native_enum=True),
         default=ContractState.PENDING
     )
+    
+    is_renegotiation: Mapped[bool] = mapped_column(Boolean, default=False)
     
     transfer_offer_id: Mapped[Optional[int]] = mapped_column(ForeignKey("transfer_offers.id", ondelete="SET NULL"), nullable=True)
 

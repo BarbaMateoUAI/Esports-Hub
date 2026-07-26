@@ -30,11 +30,15 @@ class ContractBase(BaseModel):
 class ContractOffer(ContractBase):
     pro_id: int
 
+class ContractRenegotiateRequest(BaseModel):
+    salary: float
+
 class ContractResponse(ContractBase):
     id: int
     team_id: int
     pro_id: int
     status: ContractState
+    is_renegotiation: bool = False
     team: Optional[TeamResponse] = None
     pro: Optional[ProProfileResponse] = None
 
