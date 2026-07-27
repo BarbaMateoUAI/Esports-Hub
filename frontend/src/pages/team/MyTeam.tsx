@@ -274,9 +274,14 @@ export default function MyTeam() {
         <div className="p-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-white border-l-4 border-hltv-accent pl-3">Roster Actual</h2>
-            <button onClick={() => navigate('/team/manage-players')} className="px-4 py-2 bg-hltv-accent hover:bg-hltv-accentHover text-white rounded font-bold text-sm uppercase transition-colors">
-              Gestionar Jugadores
-            </button>
+            <div className="flex gap-3">
+              <button onClick={() => navigate('/team/reports')} className="px-4 py-2 border border-gray-700 bg-[#121519] hover:bg-gray-800 text-gray-300 rounded font-bold text-sm uppercase transition-colors">
+                Ver Reportes
+              </button>
+              <button onClick={() => navigate('/team/manage-players')} className="px-4 py-2 bg-hltv-accent hover:bg-hltv-accentHover text-white rounded font-bold text-sm uppercase transition-colors">
+                Gestionar Jugadores
+              </button>
+            </div>
           </div>
           {rosterPlayers.length === 0 ? (
             <div className="bg-[#121519] border border-gray-800 rounded-xl p-8 text-center">

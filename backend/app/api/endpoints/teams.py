@@ -149,3 +149,19 @@ async def update_my_team(
         .where(Team.id == team.id)
     )
     return result.scalars().first()
+
+@router.get("/{team_id}/reports/contracts", response_model=list[ContractResponse])
+async def get_team_reports_contracts(
+    team_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get all ACTIVE and FINISHED contracts for a team, including pro profiles,
+    for reporting purposes (longevity timeline, salary calculator).
+    """
+    result = await db.execute(
+        select(Contract)
+        .options(selectinload(Contract.pro), selectinload(Contract.team).selectinload(Team.owner))
+        .where(Contract.team_id == team_id)
+    )
+    return result.scalars().all()

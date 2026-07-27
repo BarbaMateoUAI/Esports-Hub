@@ -150,6 +150,8 @@ import ProTeam from './pages/team/ProTeam';
 import Scouting from './pages/team/Scouting';
 import Offers from './pages/team/Offers';
 import ManagePlayers from './pages/team/ManagePlayers';
+import TeamReports from './pages/team/TeamReports';
+import { ErrorBoundary } from './ErrorBoundary';
 
 export default function App() {
   return (
@@ -170,6 +172,7 @@ export default function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/my-team" element={<MyTeam />} />
               <Route path="/team/manage-players" element={<ManagePlayers />} />
+              <Route path="/team/reports" element={<ErrorBoundary><TeamReports /></ErrorBoundary>} />
               <Route path="/pro-team" element={<ProTeam />} />
               <Route path="/scouting" element={<Scouting />} />
               <Route path="/offers" element={<Offers />} />

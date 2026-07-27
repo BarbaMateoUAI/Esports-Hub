@@ -28,6 +28,7 @@ class PendingContractState(BaseContractState):
         )
         for c in other_contracts.scalars().all():
             c.status = ContractState.FINISHED
+            c.end_date = datetime.datetime.utcnow()
 
         self.contract.start_date = datetime.datetime.utcnow()
         if not self.contract.is_renegotiation:
@@ -75,6 +76,7 @@ class CounterOfferContractState(BaseContractState):
         )
         for c in other_contracts.scalars().all():
             c.status = ContractState.FINISHED
+            c.end_date = datetime.datetime.utcnow()
 
         self.contract.start_date = datetime.datetime.utcnow()
         if not self.contract.is_renegotiation:
@@ -106,6 +108,7 @@ class ActiveContractState(BaseContractState):
     async def process_transition(self, new_status: ContractState, current_user, **kwargs):
         if new_status == ContractState.FINISHED:
             self.contract.status = ContractState.FINISHED
+            self.contract.end_date = datetime.datetime.utcnow()
         else:
             self.raise_invalid_transition(new_status.value)
 
