@@ -6,9 +6,13 @@ from sqlalchemy import func
 from typing import List
 
 from app.api.deps import get_db, get_current_admin_user
-from app.models.users import User, Role, Permission, ProProfile
+from app.models.users import User, Role, Permission, ProProfile, OwnerProfile
 from app.models.esports import Team, Contract, ContractState
-from app.schemas.admin import UserAdminResponse, RoleResponse, PermissionResponse, RoleCreate, RoleUpdate, AdminReportResponse
+from app.schemas.admin import (
+    UserAdminResponse, RoleResponse, PermissionResponse, RoleCreate, RoleUpdate, 
+    AdminReportResponse, AdminFullUserResponse, AdminFullUserUpdate
+)
+from app.core.security import get_password_hash
 
 router = APIRouter()
 
@@ -19,6 +23,106 @@ async def get_all_users(
 ):
     result = await db.execute(select(User).options(selectinload(User.role)))
     return result.scalars().all()
+
+@router.get("/users/{user_id}/full", response_model=AdminFullUserResponse)
+async def get_full_user_admin(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
+    user = user_result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    pro_result = await db.execute(select(ProProfile).where(ProProfile.user_id == user.id))
+    pro = pro_result.scalars().first()
+    
+    contract_dict = None
+    if pro:
+        contract_result = await db.execute(
+            select(Contract)
+            .options(selectinload(Contract.team))
+            .where((Contract.pro_id == pro.id) & (Contract.status == ContractState.ACTIVE))
+        )
+        contract = contract_result.scalars().first()
+        if contract:
+            contract_dict = {
+                "id": contract.id,
+                "salary": contract.salary,
+                "duration_months": contract.duration_months,
+                "buyout_clause": contract.buyout_clause,
+                "start_date": contract.start_date,
+                "end_date": contract.end_date,
+                "team": {"name": contract.team.name} if contract.team else None
+            }
+            
+    profile_dict = None
+    if pro:
+        profile_dict = {
+            "id": pro.id,
+            "full_name": pro.full_name,
+            "nickname": pro.nickname,
+            "country": pro.country,
+            "birth_date": pro.birth_date,
+            "bio": getattr(pro, 'bio', ''),
+            "roles_in_game": pro.roles_in_game
+        }
+    
+    return {
+        "user": user,
+        "profile": profile_dict,
+        "contract": contract_dict
+    }
+
+@router.put("/users/{user_id}/full", response_model=AdminFullUserResponse)
+async def update_full_user_admin(
+    user_id: int,
+    update_data: AdminFullUserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
+    user = user_result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if update_data.email:
+        user.email = update_data.email
+    if update_data.password:
+        user.hashed_password = get_password_hash(update_data.password)
+        
+    if update_data.profile:
+        pro_result = await db.execute(select(ProProfile).where(ProProfile.user_id == user.id))
+        pro = pro_result.scalars().first()
+        if pro:
+            p_data = update_data.profile
+            if p_data.full_name is not None: pro.full_name = p_data.full_name
+            if p_data.nickname is not None: pro.nickname = p_data.nickname
+            if p_data.country is not None: pro.country = p_data.country
+            if p_data.birth_date is not None: pro.birth_date = p_data.birth_date
+            if p_data.roles_in_game is not None: pro.roles_in_game = p_data.roles_in_game
+
+    if update_data.contract:
+        pro_result = await db.execute(select(ProProfile).where(ProProfile.user_id == user.id))
+        pro = pro_result.scalars().first()
+        if pro:
+            contract_result = await db.execute(
+                select(Contract)
+                .where((Contract.pro_id == pro.id) & (Contract.status == ContractState.ACTIVE))
+            )
+            contract = contract_result.scalars().first()
+            if contract:
+                c_data = update_data.contract
+                if c_data.salary is not None: contract.salary = c_data.salary
+                if c_data.duration_months is not None: contract.duration_months = c_data.duration_months
+                if c_data.buyout_clause is not None: contract.buyout_clause = c_data.buyout_clause
+                if c_data.start_date is not None: contract.start_date = c_data.start_date
+                if c_data.end_date is not None: contract.end_date = c_data.end_date
+
+    await db.commit()
+    
+    return await get_full_user_admin(user_id=user_id, db=db, current_user=current_user)
 
 @router.put("/users/{user_id}/role", response_model=UserAdminResponse)
 async def update_user_role(

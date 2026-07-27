@@ -4,6 +4,7 @@ import { Users, Shield, TrendingUp } from 'lucide-react';
 import ManageUsers from './ManageUsers';
 import ManageRoles from './ManageRoles';
 import AdminReports from './AdminReports';
+import AdminUserProfile from './AdminUserProfile';
 
 export default function AdminDashboard() {
   const { role, isAuthenticated } = useAuth();
@@ -49,6 +50,7 @@ export default function AdminDashboard() {
         <Routes>
           <Route path="/" element={<Navigate to="/admin/users" replace />} />
           <Route path="/users" element={<ManageUsers />} />
+          <Route path="/users/:id" element={<AdminUserProfile />} />
           <Route path="/roles" element={<ManageRoles />} />
           <Route path="/reports" element={<AdminReports />} />
         </Routes>
