@@ -9,7 +9,7 @@ const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5'
 
 export default function TeamReports() {
   const navigate = useNavigate();
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [team, setTeam] = useState<any>(null);
@@ -21,12 +21,12 @@ export default function TeamReports() {
   const [calcEnd, setCalcEnd] = useState<string>('');
 
   useEffect(() => {
-    if (!isAuthenticated || role !== 'TeamOwner') {
+    if (!isAuthenticated || !roles?.includes('TeamOwner')) {
       navigate('/');
       return;
     }
     fetchData();
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, roles, navigate]);
 
   const fetchData = async () => {
     try {
@@ -354,7 +354,7 @@ export default function TeamReports() {
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#1c2026', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
                       itemStyle={{ color: '#10b981', fontWeight: 'bold' }}
-                      formatter={(value: number) => [`$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Gasto']}
+                      formatter={(value: any) => [`$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Gasto']}
                       cursor={{ fill: '#2a2e33', opacity: 0.4 }}
                     />
                     <Bar dataKey="gasto" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />

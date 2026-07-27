@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gamepad2, ShieldCheck, Mail, Lock, User, UserSquare2, Crown, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Gamepad2, ShieldCheck, Mail, Lock, User, UserSquare2, Crown, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,6 +17,7 @@ export default function Register() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [country, setCountry] = useState('ARG');
 
@@ -146,15 +147,23 @@ export default function Register() {
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-400 mb-1">Contraseña</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full bg-[#121519] border border-gray-700 rounded-lg py-2.5 pl-10 pr-4 text-hltv-textLight focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-[#121519] border border-gray-700 rounded-lg py-2.5 pl-10 pr-12 text-hltv-textLight focus:outline-none focus:border-blue-500 transition-colors"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
             </div>
@@ -176,7 +185,7 @@ export default function Register() {
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
                     className="w-full bg-[#121519] border border-gray-700 rounded-lg py-2.5 pl-10 pr-4 text-hltv-textLight focus:outline-none focus:border-blue-500 transition-colors"
-                    placeholder="John Doe"
+                    placeholder="Oleksandr Kostyliev"
                   />
                 </div>
               </div>

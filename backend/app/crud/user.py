@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from app.models.users import User, ProProfile, OwnerProfile, Role
 from app.schemas.user import UserCreate, ProProfileCreate, OwnerProfileCreate
 from app.core.security import get_password_hash
@@ -30,12 +31,13 @@ async def create_regular_user(db: AsyncSession, user_in: UserCreate) -> User:
     db_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
-        role_id=None
+        roles=[]
     )
     db.add(db_user)
     await db.commit()
-    await db.refresh(db_user)
-    return db_user
+    
+    res = await db.execute(select(User).options(selectinload(User.roles)).where(User.id == db_user.id))
+    return res.scalars().first()
 
 async def create_user_with_pro_profile(db: AsyncSession, user_in: UserCreate, profile_in: ProProfileCreate) -> User:
     existing_user = await get_user_by_email(db, user_in.email)
@@ -47,7 +49,7 @@ async def create_user_with_pro_profile(db: AsyncSession, user_in: UserCreate, pr
     db_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
-        role_id=role.id
+        roles=[role]
     )
     db.add(db_user)
     await db.flush()
@@ -57,14 +59,14 @@ async def create_user_with_pro_profile(db: AsyncSession, user_in: UserCreate, pr
         full_name=profile_in.full_name,
         nickname=profile_in.nickname,
         birth_date=profile_in.birth_date,
-        photo_url=profile_in.photo_url,
         country=profile_in.country,
         roles_in_game=profile_in.roles_in_game
     )
     db.add(db_profile)
     await db.commit()
-    await db.refresh(db_user)
-    return db_user
+    
+    res = await db.execute(select(User).options(selectinload(User.roles)).where(User.id == db_user.id))
+    return res.scalars().first()
 
 async def create_user_with_owner_profile(db: AsyncSession, user_in: UserCreate, profile_in: OwnerProfileCreate) -> User:
     existing_user = await get_user_by_email(db, user_in.email)
@@ -76,7 +78,7 @@ async def create_user_with_owner_profile(db: AsyncSession, user_in: UserCreate, 
     db_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
-        role_id=role.id
+        roles=[role]
     )
     db.add(db_user)
     await db.flush()
@@ -84,19 +86,23 @@ async def create_user_with_owner_profile(db: AsyncSession, user_in: UserCreate, 
     db_profile = OwnerProfile(
         user_id=db_user.id,
         full_name=profile_in.full_name,
-        photo_url=profile_in.photo_url,
         country=profile_in.country
     )
     db.add(db_profile)
     await db.commit()
-    await db.refresh(db_user)
-    return db_user
+    
+    res = await db.execute(select(User).options(selectinload(User.roles)).where(User.id == db_user.id))
+    return res.scalars().first()
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     from app.core.security import verify_password
     from sqlalchemy.orm import selectinload
 
-    result = await db.execute(select(User).options(selectinload(User.role)).where(User.email == email))
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.email == email)
+    )
     user = result.scalars().first()
 
     if not user:

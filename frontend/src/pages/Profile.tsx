@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const CS2_ROLES = ['Entry', 'AWP', 'Support', 'Lurker', 'IGL', 'Coach', 'Analyst'];
 
 export default function Profile() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -38,10 +38,10 @@ export default function Profile() {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    if (activeTab === 'contrato' && !contractData && isAuthenticated && role === 'ProPlayer') {
+    if (activeTab === 'contrato' && !contractData && isAuthenticated && roles?.includes('ProPlayer')) {
       fetchContract();
     }
-  }, [activeTab, isAuthenticated, role]);
+  }, [activeTab, isAuthenticated, roles]);
 
   const fetchContract = async () => {
     setLoadingContract(true);
@@ -133,7 +133,7 @@ export default function Profile() {
 
   const isPro = !!profileData.pro_profile;
   const isOwner = !!profileData.owner_profile;
-  const isAdmin = !isPro && !isOwner && role && !['ProPlayer', 'TeamOwner', 'Unknown'].includes(role);
+  const isAdmin = !isPro && !isOwner && roles?.some(r => !['ProPlayer', 'TeamOwner', 'Unknown'].includes(r));
 
   const currentProfile = isPro ? profileData.pro_profile : isOwner ? profileData.owner_profile : null;
 
@@ -204,7 +204,7 @@ export default function Profile() {
                     {currentProfile?.full_name || 'Administrador'}
                   </h1>
                   <p className="text-hltv-accent font-bold uppercase tracking-wider text-sm mt-1">
-                    {role}
+                    {roles?.join(', ')}
                   </p>
                   <p className="text-gray-400 mt-1">{profileData.email}</p>
                 </div>

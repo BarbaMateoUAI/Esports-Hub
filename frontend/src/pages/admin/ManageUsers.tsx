@@ -1,27 +1,40 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { Trash2, UserCog, ArrowUpDown, ChevronUp, ChevronDown, Eye } from 'lucide-react';
+import { Trash2, UserCog, ArrowUpDown, ChevronUp, ChevronDown, Eye, ShieldCheck } from 'lucide-react';
+
+interface Permission {
+  id: number;
+  name: string;
+  description: string | null;
+}
 
 interface Role {
   id: number;
   name: string;
+  permissions: Permission[];
 }
 
 interface User {
   id: number;
   email: string;
   is_deleted: boolean;
-  role: Role | null;
+  roles: Role[];
+  specific_permissions: Permission[];
 }
 
 export default function ManageUsers() {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingRoleUserId, setEditingRoleUserId] = useState<number | null>(null);
+  
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
+  const [selectedSpecificPermIds, setSelectedSpecificPermIds] = useState<number[]>([]);
+  const [showAllPerms, setShowAllPerms] = useState(false);
 
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
 
@@ -32,12 +45,14 @@ export default function ManageUsers() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersRes, rolesRes] = await Promise.all([
+      const [usersRes, rolesRes, permsRes] = await Promise.all([
         api.get('/admin/users'),
-        api.get('/admin/roles')
+        api.get('/admin/roles'),
+        api.get('/admin/permissions')
       ]);
       setUsers(usersRes.data);
       setRoles(rolesRes.data);
+      setAllPermissions(permsRes.data);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error cargando datos');
@@ -46,15 +61,48 @@ export default function ManageUsers() {
     }
   };
 
-  const handleRoleChange = async (userId: number, roleId: number) => {
+  const openRoleEditor = (user: User) => {
+    setEditingUserId(user.id);
+    setSelectedRoleIds(user.roles?.map(r => r.id) || []);
+    setSelectedSpecificPermIds(user.specific_permissions?.map(p => p.id) || []);
+    setShowAllPerms(false);
+  };
+
+  const handleSave = async () => {
+    if (!editingUserId) return;
     try {
-      await api.put(`/admin/users/${userId}/role?role_id=${roleId}`);
+      // Guardar roles y permisos específicos secuencialmente
+      await api.put(`/admin/users/${editingUserId}/roles`, selectedRoleIds);
+      await api.put(`/admin/users/${editingUserId}/permissions`, { permission_ids: selectedSpecificPermIds });
+      
       setUsers(users.map(u => 
-        u.id === userId ? { ...u, role: roles.find(r => r.id === roleId) || null } : u
+        u.id === editingUserId 
+          ? { 
+              ...u, 
+              roles: roles.filter(r => selectedRoleIds.includes(r.id)),
+              specific_permissions: allPermissions.filter(p => selectedSpecificPermIds.includes(p.id))
+            } 
+          : u
       ));
-      setEditingRoleUserId(null);
+      setEditingUserId(null);
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Error al cambiar rol');
+      alert(err.response?.data?.detail || 'Error al guardar');
+    }
+  };
+
+  const toggleRole = (roleId: number) => {
+    if (selectedRoleIds.includes(roleId)) {
+      setSelectedRoleIds(selectedRoleIds.filter(id => id !== roleId));
+    } else {
+      setSelectedRoleIds([...selectedRoleIds, roleId]);
+    }
+  };
+
+  const toggleSpecificPerm = (permId: number) => {
+    if (selectedSpecificPermIds.includes(permId)) {
+      setSelectedSpecificPermIds(selectedSpecificPermIds.filter(id => id !== permId));
+    } else {
+      setSelectedSpecificPermIds([...selectedSpecificPermIds, permId]);
     }
   };
 
@@ -95,8 +143,8 @@ export default function ManageUsers() {
     let bValue: any = b[key as keyof User];
 
     if (key === 'role') {
-      aValue = a.role?.name || '';
-      bValue = b.role?.name || '';
+      aValue = a.roles?.map(r => r.name).join(', ') || '';
+      bValue = b.roles?.map(r => r.name).join(', ') || '';
     }
 
     if (aValue < bValue) return direction === 'asc' ? -1 : 1;
@@ -116,6 +164,13 @@ export default function ManageUsers() {
     if (sortConfig?.key !== columnKey) return <ArrowUpDown className="w-3 h-3 text-gray-600" />;
     return sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3 text-hltv-accent" /> : <ChevronDown className="w-3 h-3 text-hltv-accent" />;
   };
+
+  // Compute all inherited permissions from currently checked roles
+  const inheritedPermIds = new Set<number>();
+  selectedRoleIds.forEach(rid => {
+    const r = roles.find(ro => ro.id === rid);
+    r?.permissions?.forEach(p => inheritedPermIds.add(p.id));
+  });
 
   if (loading) return <div className="text-gray-400 p-8">Cargando usuarios...</div>;
   if (error) return <div className="text-red-400 p-8">{error}</div>;
@@ -146,7 +201,7 @@ export default function ManageUsers() {
                 </th>
                 <th onClick={() => requestSort('role')} className="px-4 py-3 font-bold cursor-pointer hover:bg-gray-700 transition-colors select-none group">
                   <div className="flex items-center gap-2">
-                    Rol Actual
+                    Roles Actuales
                     <SortIcon columnKey="role" />
                   </div>
                 </th>
@@ -170,13 +225,19 @@ export default function ManageUsers() {
                     </div>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                      user.role?.name === 'Admin' 
-                        ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                        : 'bg-hltv-accent/10 text-hltv-accent border border-hltv-accent/20'
-                    }`}>
-                      {user.role?.name || 'Sin Rol'}
-                    </span>
+                    <div className="flex gap-1 flex-wrap">
+                      {user.roles && user.roles.length > 0 ? user.roles.map(r => (
+                        <span key={r.id} className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                          r.name === 'Admin' 
+                            ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            : 'bg-hltv-accent/10 text-hltv-accent border border-hltv-accent/20'
+                        }`}>
+                          {r.name}
+                        </span>
+                      )) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-800 text-gray-400">Sin Rol</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -188,14 +249,14 @@ export default function ManageUsers() {
                         <Eye className="w-3 h-3" />
                         Ver
                       </button>
-                      {user.role?.name !== 'Admin' && (
+                      {!user.roles?.some(r => r.name === 'Admin') && (
                         !user.is_deleted ? (
                           <>
                             <button 
-                              onClick={() => setEditingRoleUserId(user.id)}
-                              className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors"
+                              onClick={() => openRoleEditor(user)}
+                              className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors flex items-center gap-1"
                             >
-                              Rol
+                              <ShieldCheck className="w-3 h-3"/> Permisos
                             </button>
                             <button 
                               onClick={() => handleDeleteUser(user.id)}
@@ -236,27 +297,110 @@ export default function ManageUsers() {
           </div>
         )}
       </div>
-      {editingRoleUserId && (
+
+      {editingUserId && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1c2026] border border-gray-800 rounded-xl w-full max-w-sm overflow-hidden shadow-2xl">
-            <div className="p-6 bg-gradient-to-r from-gray-900 to-[#121519] border-b border-gray-800">
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Seleccionar Nuevo Rol</h3>
+          <div className="bg-[#1c2026] border border-gray-800 rounded-xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 bg-gradient-to-r from-gray-900 to-[#121519] border-b border-gray-800 shrink-0">
+              <h3 className="text-xl font-black text-white uppercase tracking-tight">Permisos y Roles</h3>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="flex flex-col gap-2">
-                {roles.map(r => (
-                  <button 
-                    key={r.id} 
-                    onClick={() => handleRoleChange(editingRoleUserId, r.id)}
-                    className="w-full text-left px-4 py-3 bg-[#121519] hover:bg-gray-800 border border-gray-700 rounded-lg text-white font-medium transition-colors text-sm"
-                  >
-                    {r.name}
-                  </button>
-                ))}
+            
+            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+              
+              {/* Roles Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Roles</h4>
+                <div className="flex flex-col gap-2">
+                  {roles.map(r => {
+                    const isSelected = selectedRoleIds.includes(r.id);
+                    return (
+                      <div key={r.id} className={`border rounded-lg transition-colors ${isSelected ? 'bg-[#121519] border-gray-600' : 'bg-transparent border-gray-800'}`}>
+                        <label className="flex items-center gap-3 px-4 py-3 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            onChange={() => toggleRole(r.id)}
+                            className="w-4 h-4 text-hltv-accent bg-gray-800 border-gray-600 rounded focus:ring-hltv-accent focus:ring-2"
+                          />
+                          <span className="text-white font-medium text-sm">{r.name}</span>
+                        </label>
+                        
+                        {/* Render Role Permissions if checked */}
+                        {isSelected && r.permissions?.length > 0 && (
+                          <div className="px-4 pb-3 pl-11">
+                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Permisos del Rol:</div>
+                            <div className="flex flex-col gap-1.5">
+                              {r.permissions.map(p => (
+                                <div key={p.id} className="flex items-center gap-2 text-xs text-gray-300">
+                                  <CheckIcon />
+                                  <span>{p.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Specific Permissions Section */}
+              <div className="border-t border-gray-800 pt-6">
+                <button 
+                  onClick={() => setShowAllPerms(!showAllPerms)}
+                  className="w-full flex items-center justify-between text-left group"
+                >
+                  <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider group-hover:text-gray-300 transition-colors">Todos los Permisos (Específicos)</h4>
+                  {showAllPerms ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                </button>
+                
+                {showAllPerms && (
+                  <div className="mt-4 flex flex-col gap-2">
+                    {allPermissions.map(p => {
+                      const isInherited = inheritedPermIds.has(p.id);
+                      const isSpecific = selectedSpecificPermIds.includes(p.id);
+                      const isChecked = isInherited || isSpecific;
+
+                      return (
+                        <label 
+                          key={p.id} 
+                          className={`flex items-start gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            isInherited ? 'bg-gray-800/30 opacity-70 cursor-not-allowed' : 'hover:bg-gray-800 cursor-pointer'
+                          }`}
+                          title={isInherited ? "Heredado de un rol" : ""}
+                        >
+                          <input 
+                            type="checkbox" 
+                            checked={isChecked}
+                            disabled={isInherited}
+                            onChange={() => toggleSpecificPerm(p.id)}
+                            className="w-4 h-4 mt-0.5 text-hltv-accent bg-gray-800 border-gray-600 rounded focus:ring-hltv-accent focus:ring-2 disabled:bg-gray-700 disabled:border-gray-600 disabled:text-gray-500"
+                          />
+                          <div className="flex flex-col">
+                            <span className={`font-medium text-sm ${isInherited ? 'text-gray-400' : 'text-gray-200'}`}>{p.name}</span>
+                            {p.description && <span className="text-xs text-gray-500">{p.description}</span>}
+                            {isInherited && <span className="text-[10px] text-hltv-accent mt-1 uppercase font-bold tracking-wider">Heredado</span>}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            <div className="p-6 bg-gradient-to-r from-gray-900 to-[#121519] border-t border-gray-800 shrink-0 flex gap-3">
               <button 
-                onClick={() => setEditingRoleUserId(null)}
-                className="w-full mt-4 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold uppercase text-sm transition-colors"
+                onClick={handleSave}
+                className="flex-1 px-4 py-3 bg-hltv-accent hover:bg-hltv-accentHover text-white rounded-lg font-bold uppercase text-sm transition-colors"
+              >
+                Guardar Cambios
+              </button>
+              <button 
+                onClick={() => setEditingUserId(null)}
+                className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold uppercase text-sm transition-colors"
               >
                 Cancelar
               </button>
@@ -264,6 +408,16 @@ export default function ManageUsers() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <div className="w-3.5 h-3.5 rounded bg-gray-700 flex items-center justify-center shrink-0">
+      <svg className="w-2.5 h-2.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+      </svg>
     </div>
   );
 }

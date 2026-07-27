@@ -5,12 +5,14 @@ import ManageUsers from './ManageUsers';
 import ManageRoles from './ManageRoles';
 import AdminReports from './AdminReports';
 import AdminUserProfile from './AdminUserProfile';
+import ManageContracts from './ManageContracts';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { role, isAuthenticated } = useAuth();
+  const { roles, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  const isAdminRole = role && !['ProPlayer', 'TeamOwner', 'Unknown'].includes(role);
+  const isAdminRole = roles?.some(r => !['ProPlayer', 'TeamOwner', 'Unknown'].includes(r));
   if (!isAuthenticated || !isAdminRole) {
     return <Navigate to="/" replace />;
   }
@@ -42,6 +44,7 @@ export default function AdminDashboard() {
         <nav className="flex flex-col space-y-1">
           <NavItem to="/admin/users" icon={Users} label="Usuarios" />
           <NavItem to="/admin/roles" icon={Shield} label="Roles y Permisos" />
+          <NavItem to="/admin/contracts" icon={CalendarIcon} label="Contratos" />
           <NavItem to="/admin/reports" icon={TrendingUp} label="Reportes" />
         </nav>
       </aside>
@@ -52,6 +55,7 @@ export default function AdminDashboard() {
           <Route path="/users" element={<ManageUsers />} />
           <Route path="/users/:id" element={<AdminUserProfile />} />
           <Route path="/roles" element={<ManageRoles />} />
+          <Route path="/contracts" element={<ManageContracts />} />
           <Route path="/reports" element={<AdminReports />} />
         </Routes>
       </main>

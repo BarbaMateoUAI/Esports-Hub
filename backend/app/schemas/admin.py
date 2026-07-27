@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import date, datetime
 from app.models.users import CS2Role
+from app.models.esports import ContractState
 
 class PermissionBase(BaseModel):
     name: str
@@ -33,7 +34,9 @@ class UserAdminResponse(BaseModel):
     id: int
     email: str
     is_deleted: bool = False
-    role: Optional[RoleBase] = None
+    roles: List[RoleResponse] = []
+    specific_permissions: List[PermissionResponse] = []
+    all_permissions: List[PermissionResponse] = []
 
     class Config:
         from_attributes = True
@@ -65,6 +68,10 @@ class AdminReportResponse(BaseModel):
 
 # --- New schemas for Full User Edit ---
 
+class UserPermissionsUpdate(BaseModel):
+    permission_ids: List[int]
+
+
 class AdminProProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     nickname: Optional[str] = None
@@ -92,3 +99,48 @@ class AdminFullUserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- New schemas for Contracts Timeline ---
+
+class AdminPlayerListResponse(BaseModel):
+    id: int
+    user_id: int
+    full_name: str
+    nickname: str
+    
+    class Config:
+        from_attributes = True
+
+class AdminTeamSimpleResponse(BaseModel):
+    id: int
+    name: str
+    logo_url: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class AdminContractResponse(BaseModel):
+    id: int
+    team_id: int
+    pro_id: int
+    salary: float
+    duration_months: int
+    buyout_clause: Optional[float] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: ContractState
+    is_renegotiation: bool = False
+    is_deleted: bool = False
+    team: AdminTeamSimpleResponse
+    
+    class Config:
+        from_attributes = True
+
+class AdminContractTimelineUpdate(BaseModel):
+    salary: Optional[float] = None
+    duration_months: Optional[int] = None
+    buyout_clause: Optional[float] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: Optional[ContractState] = None
+    is_deleted: Optional[bool] = None

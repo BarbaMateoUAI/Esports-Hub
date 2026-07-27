@@ -5,3 +5,5 @@
 body {
   @apply bg-hltv-bg text-hltv-textLight font-sans antialiased m-0 p-0;
 }
+
+input::-ms-reveal, input::-ms-clear { display: none; }

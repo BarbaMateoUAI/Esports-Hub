@@ -10,7 +10,7 @@ from app.models.users import User, Role, Permission, ProProfile, OwnerProfile
 from app.models.esports import Team, Contract, ContractState
 from app.schemas.admin import (
     UserAdminResponse, RoleResponse, PermissionResponse, RoleCreate, RoleUpdate, 
-    AdminReportResponse, AdminFullUserResponse, AdminFullUserUpdate
+    AdminReportResponse, AdminFullUserResponse, AdminFullUserUpdate, UserPermissionsUpdate
 )
 from app.core.security import get_password_hash
 
@@ -21,7 +21,10 @@ async def get_all_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    result = await db.execute(select(User).options(selectinload(User.role)))
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+    )
     return result.scalars().all()
 
 @router.get("/users/{user_id}/full", response_model=AdminFullUserResponse)
@@ -30,7 +33,11 @@ async def get_full_user_admin(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
+    user_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -82,7 +89,11 @@ async def update_full_user_admin(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
+    user_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -124,34 +135,69 @@ async def update_full_user_admin(
     
     return await get_full_user_admin(user_id=user_id, db=db, current_user=current_user)
 
-@router.put("/users/{user_id}/role", response_model=UserAdminResponse)
-async def update_user_role(
+@router.put("/users/{user_id}/roles", response_model=UserAdminResponse)
+async def update_user_roles(
     user_id: int,
-    role_id: int,
+    role_ids: List[int],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
+    user_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.role and user.role.name == "Admin":
-        raise HTTPException(status_code=403, detail="No se puede modificar el rol del Administrador principal")
+    if any(r.name == "Admin" for r in user.roles):
+        raise HTTPException(status_code=403, detail="No se puede modificar los roles del Administrador principal")
 
-    role_result = await db.execute(select(Role).where(Role.id == role_id))
-    role = role_result.scalars().first()
-    if not role:
-        raise HTTPException(status_code=404, detail="Role not found")
-
-    if role.name == "Admin":
+    roles_result = await db.execute(select(Role).where(Role.id.in_(role_ids)))
+    roles = roles_result.scalars().all()
+    
+    if any(r.name == "Admin" for r in roles):
         raise HTTPException(status_code=403, detail="No se puede asignar el rol de Admin a otros usuarios")
 
-    user.role_id = role.id
+    user.roles = list(roles)
     await db.commit()
     await db.refresh(user)
 
-    final_result = await db.execute(select(User).where(User.id == user_id).options(selectinload(User.role)))
+    final_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
+    return final_result.scalars().first()
+
+@router.put("/users/{user_id}/permissions", response_model=UserAdminResponse)
+async def update_user_permissions(
+    user_id: int,
+    update_data: UserPermissionsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    user_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
+    user = user_result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    perms_result = await db.execute(select(Permission).where(Permission.id.in_(update_data.permission_ids)))
+    permissions = perms_result.scalars().all()
+
+    user.specific_permissions = list(permissions)
+    await db.commit()
+    
+    final_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
     return final_result.scalars().first()
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -163,12 +209,16 @@ async def delete_user(
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
 
-    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
+    user_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.role and user.role.name == "Admin":
+    if any(r.name == "Admin" for r in user.roles):
         raise HTTPException(status_code=403, detail="No se puede dar de baja al Administrador principal")
 
     user.is_deleted = True
@@ -181,12 +231,16 @@ async def recover_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    user_result = await db.execute(select(User).where(User.id == user_id).options(selectinload(User.role)))
+    user_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.role and user.role.name == "Admin":
+    if any(r.name == "Admin" for r in user.roles):
         raise HTTPException(status_code=403, detail="El Administrador principal no puede ser modificado")
 
     user.is_deleted = False
@@ -203,12 +257,16 @@ async def permanent_delete_user(
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
 
-    user_result = await db.execute(select(User).options(selectinload(User.role)).where(User.id == user_id))
+    user_result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles).selectinload(Role.permissions), selectinload(User.specific_permissions))
+        .where(User.id == user_id)
+    )
     user = user_result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.role and user.role.name == "Admin":
+    if any(r.name == "Admin" for r in user.roles):
         raise HTTPException(status_code=403, detail="No se puede eliminar permanentemente al Administrador principal")
 
     await db.delete(user)
@@ -384,3 +442,83 @@ async def get_admin_reports(
         "age_distribution": age_distribution,
         "team_finances": team_finances
     }
+
+# --- Contracts Timeline Endpoints ---
+
+from app.schemas.admin import AdminPlayerListResponse, AdminContractResponse, AdminContractTimelineUpdate
+
+@router.get("/players", response_model=List[AdminPlayerListResponse])
+async def get_all_pro_players(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    result = await db.execute(select(ProProfile))
+    return result.scalars().all()
+
+@router.get("/players/{pro_id}/contracts", response_model=List[AdminContractResponse])
+async def get_player_contracts(
+    pro_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    result = await db.execute(
+        select(Contract)
+        .options(selectinload(Contract.team))
+        .where(Contract.pro_id == pro_id)
+        .order_by(Contract.start_date.desc())
+    )
+    return result.scalars().all()
+
+@router.put("/contracts/{contract_id}", response_model=AdminContractResponse)
+async def update_contract(
+    contract_id: int,
+    update_data: AdminContractTimelineUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    result = await db.execute(select(Contract).options(selectinload(Contract.team)).where(Contract.id == contract_id))
+    contract = result.scalars().first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+        
+    if update_data.salary is not None: contract.salary = update_data.salary
+    if update_data.duration_months is not None: contract.duration_months = update_data.duration_months
+    if update_data.buyout_clause is not None: contract.buyout_clause = update_data.buyout_clause
+    if update_data.start_date is not None: contract.start_date = update_data.start_date
+    if update_data.end_date is not None: contract.end_date = update_data.end_date
+    if update_data.status is not None: contract.status = update_data.status
+    if update_data.is_deleted is not None: contract.is_deleted = update_data.is_deleted
+    
+    await db.commit()
+    await db.refresh(contract)
+    return contract
+
+@router.delete("/contracts/{contract_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def logical_delete_contract(
+    contract_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    result = await db.execute(select(Contract).where(Contract.id == contract_id))
+    contract = result.scalars().first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+        
+    contract.is_deleted = True
+    await db.commit()
+    return None
+
+@router.delete("/contracts/{contract_id}/hard", status_code=status.HTTP_204_NO_CONTENT)
+async def hard_delete_contract(
+    contract_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    result = await db.execute(select(Contract).where(Contract.id == contract_id))
+    contract = result.scalars().first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+        
+    await db.delete(contract)
+    await db.commit()
+    return None

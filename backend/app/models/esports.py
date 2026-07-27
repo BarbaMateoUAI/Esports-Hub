@@ -61,6 +61,7 @@ class Contract(Base):
     )
 
     is_renegotiation: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, server_default='false')
 
     transfer_offer_id: Mapped[Optional[int]] = mapped_column(ForeignKey("transfer_offers.id", ondelete="SET NULL"), nullable=True)
 

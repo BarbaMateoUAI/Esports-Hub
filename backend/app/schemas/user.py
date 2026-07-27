@@ -6,6 +6,12 @@ from app.models.users import CS2Role
 class UserBase(BaseModel):
     email: EmailStr
 
+class RoleSimple(BaseModel):
+    id: int
+    name: str
+    class Config:
+        from_attributes = True
+
 class UserCreate(UserBase):
     password: str
 
@@ -32,7 +38,7 @@ class UserOwnerRegistration(BaseModel):
 
 class UserResponse(UserBase):
     id: int
-    role_id: Optional[int]
+    roles: List[RoleSimple] = []
 
     class Config:
         from_attributes = True
@@ -40,7 +46,7 @@ class UserResponse(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
-    role: str
+    roles: List[str]
 
 class ProProfileResponse(PersonBase):
     id: int
@@ -57,7 +63,7 @@ class OwnerProfileResponse(PersonBase):
 
 class UserProfileResponse(UserBase):
     id: int
-    role_id: Optional[int]
+    roles: List[RoleSimple] = []
     pro_profile: Optional[ProProfileResponse] = None
     owner_profile: Optional[OwnerProfileResponse] = None
     class Config:

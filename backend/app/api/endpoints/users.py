@@ -54,9 +54,9 @@ async def login_for_access_token(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    role_name = user.role.name if user.role else "Unknown"
-    access_token = create_access_token(data={"sub": user.email, "role": role_name})
-    return {"access_token": access_token, "token_type": "bearer", "role": role_name}
+    role_names = [r.name for r in user.roles]
+    access_token = create_access_token(data={"sub": user.email, "roles": role_names})
+    return {"access_token": access_token, "token_type": "bearer", "roles": role_names}
 
 from app.api.deps import get_current_user
 from app.schemas.user import UserProfileResponse
@@ -75,7 +75,7 @@ async def get_my_profile(
 ):
     result = await db.execute(
         select(User)
-        .options(selectinload(User.person))
+        .options(selectinload(User.person), selectinload(User.roles))
         .where(User.id == current_user.id)
     )
     user = result.scalars().first()
@@ -91,7 +91,7 @@ async def update_my_profile(
 ):
     result = await db.execute(
         select(User)
-        .options(selectinload(User.person))
+        .options(selectinload(User.person), selectinload(User.roles))
         .where(User.id == current_user.id)
     )
     user = result.scalars().first()
@@ -136,7 +136,7 @@ async def update_my_profile(
 
     result = await db.execute(
         select(User)
-        .options(selectinload(User.person))
+        .options(selectinload(User.person), selectinload(User.roles))
         .where(User.id == current_user.id)
     )
     return result.scalars().first()

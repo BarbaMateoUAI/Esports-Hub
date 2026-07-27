@@ -5,7 +5,7 @@ import { Shield, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ProTeam() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const navigate = useNavigate();
 
   const [team, setTeam] = useState<any>(null);
@@ -13,12 +13,12 @@ export default function ProTeam() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isAuthenticated && role === 'ProPlayer') {
+    if (isAuthenticated && roles?.includes('ProPlayer')) {
       fetchData();
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, role]);
+  }, [isAuthenticated, roles]);
 
   const fetchData = async () => {
     try {
@@ -40,7 +40,7 @@ export default function ProTeam() {
 
   if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
 
-  if (!isAuthenticated || role !== 'ProPlayer') {
+  if (!isAuthenticated || !roles?.includes('ProPlayer')) {
     return <div className="p-8 text-center text-red-500">Acceso denegado</div>;
   }
 

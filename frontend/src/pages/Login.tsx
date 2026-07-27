@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, ShieldCheck, LogIn, KeyRound } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, LogIn, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,10 +28,10 @@ export default function Login() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const { access_token, role } = response.data;
-      login(access_token, role);
+      const { access_token, roles } = response.data;
+      login(access_token, roles);
 
-      if (role === 'Administrator') {
+      if (roles.includes('Administrator')) {
         navigate('/admin');
       } else {
         navigate('/');
@@ -95,13 +96,21 @@ export default function Login() {
             <div className="relative group">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-hltv-accent transition-colors" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-[#121519] border border-gray-700 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-hltv-accent focus:ring-1 focus:ring-hltv-accent transition-all duration-300 shadow-inner"
+                className="w-full bg-[#121519] border border-gray-700 rounded-xl py-3 pl-11 pr-12 text-white placeholder-gray-600 focus:outline-none focus:border-hltv-accent focus:ring-1 focus:ring-hltv-accent transition-all duration-300 shadow-inner"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 

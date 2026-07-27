@@ -25,7 +25,7 @@ const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) =>
 };
 
 const NavBar = () => {
-  const { isAuthenticated, role, logout } = useAuth();
+  const { isAuthenticated, roles, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -53,22 +53,22 @@ const NavBar = () => {
               <NavLink to="/resultados">Resultados</NavLink>
               <NavLink to="/torneos">Torneos</NavLink>
 
-              {role === 'TeamOwner' && (
+              {roles?.includes('TeamOwner') && (
                 <>
                   <NavLink to="/my-team">Mi Equipo</NavLink>
                   <NavLink to="/scouting">Scouting</NavLink>
                 </>
               )}
 
-              {role === 'ProPlayer' && (
+              {roles?.includes('ProPlayer') && (
                 <NavLink to="/pro-team">Mi Equipo</NavLink>
               )}
 
-              {(role === 'TeamOwner' || role === 'ProPlayer') && (
+              {(roles?.includes('TeamOwner') || roles?.includes('ProPlayer')) && (
                 <NavLink to="/offers">Ofertas</NavLink>
               )}
 
-              {role && !['ProPlayer', 'TeamOwner', 'Unknown'].includes(role) && (
+              {roles?.some(r => !['ProPlayer', 'TeamOwner', 'Unknown'].includes(r)) && (
                 <NavLink to="/admin">Panel Admin</NavLink>
               )}
             </div>
@@ -81,7 +81,7 @@ const NavBar = () => {
                   <UserCircle className="w-5 h-5 text-gray-400" />
                   <div className="flex flex-col">
                     <span className="text-gray-300 font-medium leading-none">Mi Cuenta</span>
-                    <span className="text-xs text-hltv-accent font-bold mt-1">{role}</span>
+                    <span className="text-xs text-hltv-accent font-bold mt-1">{roles?.join(', ')}</span>
                   </div>
                 </Link>
                 <button 

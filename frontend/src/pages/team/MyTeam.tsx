@@ -5,7 +5,7 @@ import { Camera, Shield, Trophy, X, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MyTeam() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,12 +45,12 @@ export default function MyTeam() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated || role !== 'TeamOwner') {
+    if (!isAuthenticated || !roles?.includes('TeamOwner')) {
       navigate('/');
       return;
     }
     fetchTeam();
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, roles, navigate]);
 
   const fetchTeam = async () => {
     try {

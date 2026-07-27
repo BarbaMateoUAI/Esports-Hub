@@ -37,7 +37,8 @@ async def get_current_user(
         select(User)
         .where(User.email == email)
         .options(
-            selectinload(User.role).selectinload(Role.permissions),
+            selectinload(User.roles).selectinload(Role.permissions),
+            selectinload(User.specific_permissions),
             selectinload(User.person)
         )
     )
@@ -64,14 +65,17 @@ async def get_current_user_optional(
         select(User)
         .where(User.email == email)
         .options(
-            selectinload(User.role).selectinload(Role.permissions),
+            selectinload(User.roles).selectinload(Role.permissions),
+            selectinload(User.specific_permissions),
             selectinload(User.person)
         )
     )
     return result.scalars().first()
 
 async def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
-    if not current_user.role or (current_user.role.name != "Admin" and not current_user.role.permissions):
+    has_admin = any(r.name == "Admin" for r in current_user.roles)
+    has_perms = len(current_user.all_permissions) > 0
+    if not has_admin and not has_perms:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The user doesn't have enough privileges"

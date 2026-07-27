@@ -1,11 +1,11 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Shield, X, Users, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ManagePlayers() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const navigate = useNavigate();
 
   const [team, setTeam] = useState<any>(null);
@@ -37,12 +37,12 @@ export default function ManagePlayers() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated || role !== 'TeamOwner') {
+    if (!isAuthenticated || !roles?.includes('TeamOwner')) {
       navigate('/');
       return;
     }
     fetchTeamData();
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, roles, navigate]);
 
   const fetchTeamData = async () => {
     try {

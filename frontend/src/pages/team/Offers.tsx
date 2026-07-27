@@ -1,10 +1,10 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Check, X, Inbox, Handshake, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function Offers() {
-  const { role } = useAuth();
+  const { roles } = useAuth();
   const [data, setData] = useState<{ transfers: any[], contracts: any[] }>({ transfers: [], contracts: [] });
   const [loading, setLoading] = useState(true);
 
@@ -67,8 +67,8 @@ export default function Offers() {
 
   if (loading) return <div className="p-8 text-center text-gray-400">Cargando ofertas...</div>;
 
-  const isOwner = role === 'TeamOwner';
-  const isPro = role === 'ProPlayer';
+  const isOwner = roles?.includes('TeamOwner');
+  const isPro = roles?.includes('ProPlayer');
 
   const isPending = (status: string) => ['PENDING', 'NEGOTIATING', 'COUNTER_OFFER'].includes(status);
 

@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Search, Filter, ShieldCheck, Euro, ChevronDown, ChevronUp, User, Clock, FileText } from 'lucide-react';
 
 export default function Scouting() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
 
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +107,7 @@ export default function Scouting() {
     }
   };
 
-  if (!isAuthenticated || role !== 'TeamOwner') {
+  if (!isAuthenticated || !roles?.includes('TeamOwner')) {
     return <div className="p-8 text-center text-red-500">Acceso denegado</div>;
   }
 

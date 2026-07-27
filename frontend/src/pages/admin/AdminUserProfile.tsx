@@ -7,7 +7,7 @@ interface FullUserData {
   user: {
     id: number;
     email: string;
-    role: { name: string } | null;
+    roles: { name: string }[];
   };
   profile: {
     id: number;
@@ -377,9 +377,9 @@ export default function AdminUserProfile() {
               />
             </div>
             <div className="pt-2">
-              <label className="block text-gray-400 text-xs font-bold uppercase mb-2">Rol en Sistema (Solo Lectura)</label>
+              <label className="block text-gray-400 text-xs font-bold uppercase mb-2">Roles en Sistema (Solo Lectura)</label>
               <div className="bg-[#121519] border border-gray-700 text-gray-400 px-4 py-2.5 rounded font-bold uppercase tracking-wider text-sm">
-                {data.user.role?.name || 'Sin Rol'}
+                {data.user.roles?.length > 0 ? data.user.roles.map(r => r.name).join(', ') : 'Sin Rol'}
               </div>
             </div>
           </div>
